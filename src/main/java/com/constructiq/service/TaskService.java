@@ -11,6 +11,7 @@ import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.TaskRepository;
 import com.constructiq.repository.UserRepository;
+import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -30,8 +31,10 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
+    private final Utils  utils;
+
     public TaskResponse createTask(Long projectId, TaskRequest request, Authentication authentication) {
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = utils.getCurrentUser(authentication);
         Project project = getProjectAndCheckOwnership(projectId, currentUser);
 
         Task task = Task.builder()
@@ -50,7 +53,7 @@ public class TaskService {
     }
 
     public List<TaskResponse> getTasksByProject(Long projectId, Authentication authentication) {
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = utils.getCurrentUser(authentication);
         Project project = getProjectAndCheckOwnership(projectId, currentUser);
 
         return taskRepository.findByProjectOrderByCreatedAtDesc(project)
@@ -60,7 +63,7 @@ public class TaskService {
     }
 
     public TaskResponse getTaskById(Long taskId, Authentication authentication) {
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = utils.getCurrentUser(authentication);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
@@ -71,7 +74,7 @@ public class TaskService {
     }
 
     public TaskResponse updateTask(Long taskId, TaskRequest request, Authentication authentication) {
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = utils.getCurrentUser(authentication);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
@@ -100,7 +103,7 @@ public class TaskService {
     }
 
     public void deleteTask(Long taskId, Authentication authentication) {
-        User currentUser = getCurrentUser(authentication);
+        User currentUser = utils.getCurrentUser(authentication);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
@@ -108,13 +111,6 @@ public class TaskService {
         checkProjectOwnership(task.getProject(), currentUser);
 
         taskRepository.delete(task);
-    }
-
-    private User getCurrentUser(Authentication authentication) {
-        String email = authentication.getName();
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
 
     private Project getProjectAndCheckOwnership(Long projectId, User currentUser) {
