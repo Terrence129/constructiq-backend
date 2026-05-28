@@ -104,7 +104,7 @@ public class ProjectService {
 
     private User getCurrentUser(Authentication authentication) {
 //        String email = authentication.getName();
-        String email = "peacefulterrence@gmail.com";
+        String email = "peacefulterrence@gmail.com";  // dev environment
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
