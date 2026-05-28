@@ -72,8 +72,9 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
         checkOwnership(project, currentUser);
-
-        project.setName(request.getName());
+        if (request.getName() != null) {
+            project.setName(request.getName());
+        }
         project.setDescription(request.getDescription());
         project.setLocation(request.getLocation());
         project.setClientName(request.getClientName());
