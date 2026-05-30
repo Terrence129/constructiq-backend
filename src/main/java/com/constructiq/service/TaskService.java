@@ -65,8 +65,7 @@ public class TaskService {
     public TaskResponse getTaskById(Long taskId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
 
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        Task task = getTask(taskId);
 
         checkProjectOwnership(task.getProject(), currentUser);
 
@@ -76,8 +75,7 @@ public class TaskService {
     public TaskResponse updateTask(Long taskId, TaskRequest request, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
 
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        Task task = getTask(taskId);
 
         checkProjectOwnership(task.getProject(), currentUser);
         if (request.getTitle() != null) {
@@ -105,12 +103,16 @@ public class TaskService {
     public void deleteTask(Long taskId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
 
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        Task task = getTask(taskId);
 
         checkProjectOwnership(task.getProject(), currentUser);
 
         taskRepository.delete(task);
+    }
+
+    private Task getTask(Long taskId) {
+        return taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
     }
 
     private Project getProjectAndCheckOwnership(Long projectId, User currentUser) {
