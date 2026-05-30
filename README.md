@@ -328,14 +328,3 @@ feat(task): implement task management
 ## Author
 
 Terrence Chan
-
-BSc Computer Science and Technology (CDUT & Oxford Brookes University)
-
-Graduate Diploma in Systems Analysis (NUS-ISS)
-
-Interested in:
-
-* Full-Stack Development
-* Cloud Computing
-* AI Applications
-* Construction Digital Transformation
