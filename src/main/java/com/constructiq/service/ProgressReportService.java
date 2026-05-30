@@ -39,9 +39,11 @@ public class ProgressReportService {
                 .project(project)
                 .reportDate(progressReportRequest.getReportDate())
                 .summary(progressReportRequest.getSummary())
+                .completedWork(progressReportRequest.getCompletedWork())
                 .delayedWork(progressReportRequest.getDelayedWork())
                 .issues(progressReportRequest.getIssues())
                 .nextActions(progressReportRequest.getNextActions())
+                .createdBy(currentUser)
                 .build();
 
         ProgressReport savedProgressReport = progressReportRepository.save(progressReport);
@@ -50,7 +52,7 @@ public class ProgressReportService {
 
 
     //    getReportsByProject()
-    public List<ProgressReportResponse> getReportsByProject(Long projectId, Authentication authentication) {
+    public List<ProgressReportResponse> getProgressReportsByProject(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
 
@@ -69,7 +71,7 @@ public class ProgressReportService {
     }
 
 //    updateReport()
-    public  ProgressReportResponse updateProgressReport(Long progressReportId, ProgressReportRequest progressReportRequest, Authentication authentication) {
+    public ProgressReportResponse updateProgressReport(Long progressReportId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         checkProjectReportWriteAuthority(progressReportId, currentUser);
         ProgressReport progressReport = getProgressReport(progressReportId);
@@ -135,6 +137,9 @@ public class ProgressReportService {
                 .issues(progressReport.getIssues())
                 .nextActions(progressReport.getNextActions())
                 .createdById(progressReport.getCreatedBy().getId())
+                .createdByName(progressReport.getCreatedBy().getName())
+                .createdAt(progressReport.getCreatedAt())
+                .updatedAt(progressReport.getUpdatedAt())
                 .build();
     }
 }
