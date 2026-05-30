@@ -61,23 +61,50 @@ public class ProgressReportService {
     }
 
 //    getReportById()
-    public ProgressReportResponse getProgressReportById(Long id, Authentication authentication) {
+    public ProgressReportResponse getProgressReportById(Long progressReportId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
-        ProgressReport progressReport = progressReportRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Progress Report not found")
-        );
+        ProgressReport progressReport = getProgressReport(progressReportId);
         checkProjectReportReadAuthority(progressReport.getProject().getId(), currentUser);
         return toResponse(progressReport);
     }
 
 //    updateReport()
+    public  ProgressReportResponse updateProgressReport(Long progressReportId, ProgressReportRequest progressReportRequest, Authentication authentication) {
+        User currentUser = utils.getCurrentUser(authentication);
+        checkProjectReportWriteAuthority(progressReportId, currentUser);
+        ProgressReport progressReport = getProgressReport(progressReportId);
+        if (progressReportRequest.getReportDate() != null) {
+            progressReport.setReportDate(progressReportRequest.getReportDate());
+        }
+        if (progressReportRequest.getSummary() != null) {
+            progressReport.setSummary(progressReportRequest.getSummary());
+        }
+        progressReport.setCompletedWork(progressReportRequest.getCompletedWork());
+        progressReport.setDelayedWork(progressReportRequest.getDelayedWork());
+        progressReport.setIssues(progressReportRequest.getIssues());
+        progressReport.setNextActions(progressReportRequest.getNextActions());
+        ProgressReport savedProgressreport = progressReportRepository.save(progressReport);
+        return toResponse(savedProgressreport);
+
+    }
 
 //    deleteReport()
+    public void deleteProgressReportById(Long progressReportId, Authentication authentication) {
+        User currentUser = utils.getCurrentUser(authentication);
+        checkProjectReportWriteAuthority(progressReportId, currentUser);
+        ProgressReport progressReport = getProgressReport(progressReportId);
+        progressReportRepository.delete(progressReport);
+
+    }
 
     private Project getProject(Long projectId) {
 
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+    }
+    private ProgressReport getProgressReport(Long id) {
+        return progressReportRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Progress Report not found"));
     }
 
     private void checkProjectReportReadAuthority(Long projectId, User currentUser) {
