@@ -110,6 +110,7 @@ public class ProgressReportService {
     private void checkProjectReportReadAuthority(Long projectId, User currentUser) {
         boolean noPermission = false;
         //  TODO: add authentication logic
+
         if (noPermission) {
             throw new IllegalArgumentException("You do not have permission to read this progress report");
         }
