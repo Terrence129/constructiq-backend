@@ -24,8 +24,7 @@ public class Utils {
     private final UserRepository userRepository;
 
     public User getCurrentUser(Authentication authentication) {
-        //        String email = authentication.getName();
-        String email = "peacefulterrence@gmail.com";  // dev environment
+        String email = authentication.getName();
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));

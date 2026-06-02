@@ -7,12 +7,15 @@ import com.constructiq.entity.User;
 import com.constructiq.enums.ProjectStatus;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
-import com.constructiq.repository.UserRepository;
+import com.constructiq.repository.UserProjectRegistrationRepository;
+import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 /**
  * @description:
  * @author: chenyaqi
@@ -24,7 +27,9 @@ import java.util.List;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
+    private final UserProjectRegistrationRepository registrationRepository;
+    private final ProjectAccessService projectAccessService;
+    private final Utils utils;
 
     public ProjectResponse createProject(ProjectRequest request, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
@@ -48,8 +53,18 @@ public class ProjectService {
     public List<ProjectResponse> getMyProjects(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 
-        return projectRepository.findByCreatedByOrderByCreatedAtDesc(currentUser)
-                .stream()
+        Map<Long, Project> accessibleProjects = new LinkedHashMap<>();
+
+        projectRepository.findByCreatedByOrderByCreatedAtDesc(currentUser)
+                .forEach(project -> accessibleProjects.put(project.getId(), project));
+
+        registrationRepository.findByUser(currentUser)
+                .forEach(registration -> accessibleProjects.putIfAbsent(
+                        registration.getProject().getId(),
+                        registration.getProject()
+                ));
+
+        return accessibleProjects.values().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -60,7 +75,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkOwnership(project, currentUser);
+        projectAccessService.checkProjectAccess(project, currentUser);
 
         return toResponse(project);
     }
@@ -71,7 +86,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkOwnership(project, currentUser);
+        projectAccessService.checkProjectAccess(project, currentUser);
         if (request.getName() != null) {
             project.setName(request.getName());
         }
@@ -97,22 +112,13 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkOwnership(project, currentUser);
+        projectAccessService.checkProjectAccess(project, currentUser);
 
         projectRepository.delete(project);
     }
 
     private User getCurrentUser(Authentication authentication) {
-//        String email = authentication.getName();
-        String email = "peacefulterrence@gmail.com";  // dev environment
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
-    }
-
-    private void checkOwnership(Project project, User currentUser) {
-        if (!project.getCreatedBy().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("You do not have permission to access this project");
-        }
+        return utils.getCurrentUser(authentication);
     }
 
     private ProjectResponse toResponse(Project project) {

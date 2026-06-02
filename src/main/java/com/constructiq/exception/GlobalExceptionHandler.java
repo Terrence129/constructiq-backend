@@ -8,6 +8,7 @@ package com.constructiq.exception;
  */
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,17 @@ public class GlobalExceptionHandler {
                 .status(401)
                 .error("Unauthorized")
                 .message("Invalid email or password")
+                .build();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleAccessDenied(AccessDeniedException ex) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(403)
+                .error("Forbidden")
+                .message(ex.getMessage())
                 .build();
     }
 

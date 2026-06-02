@@ -10,7 +10,6 @@ import com.constructiq.enums.TaskStatus;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.TaskRepository;
-import com.constructiq.repository.UserRepository;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -29,7 +28,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
+    private final ProjectAccessService projectAccessService;
 
     private final Utils  utils;
 
@@ -67,7 +66,7 @@ public class TaskService {
 
         Task task = getTask(taskId);
 
-        checkProjectOwnership(task.getProject(), currentUser);
+        projectAccessService.checkProjectAccess(task.getProject(), currentUser);
 
         return toResponse(task);
     }
@@ -77,7 +76,7 @@ public class TaskService {
 
         Task task = getTask(taskId);
 
-        checkProjectOwnership(task.getProject(), currentUser);
+        projectAccessService.checkProjectAccess(task.getProject(), currentUser);
         if (request.getTitle() != null) {
             task.setTitle(request.getTitle());
         }
@@ -105,7 +104,7 @@ public class TaskService {
 
         Task task = getTask(taskId);
 
-        checkProjectOwnership(task.getProject(), currentUser);
+        projectAccessService.checkProjectAccess(task.getProject(), currentUser);
 
         taskRepository.delete(task);
     }
@@ -119,15 +118,9 @@ public class TaskService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkProjectOwnership(project, currentUser);
+        projectAccessService.checkProjectAccess(project, currentUser);
 
         return project;
-    }
-
-    private void checkProjectOwnership(Project project, User currentUser) {
-        if (!project.getCreatedBy().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("You do not have permission to access this project");
-        }
     }
 
     private TaskResponse toResponse(Task task) {

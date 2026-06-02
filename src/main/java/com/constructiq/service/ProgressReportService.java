@@ -29,12 +29,13 @@ public class ProgressReportService {
     private final ProjectRepository projectRepository;
     private final ProgressReportRepository progressReportRepository;
     private final Utils utils;
+    private final ProjectAccessService projectAccessService;
 
 //    createReport()
     public ProgressReportResponse createProgressReport(Long projectId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
-        checkProjectReportWriteAuthority(projectId, currentUser);
         Project project = getProject(projectId);
+        projectAccessService.checkProjectAccess(project, currentUser);
         ProgressReport  progressReport = ProgressReport.builder()
                 .project(project)
                 .reportDate(progressReportRequest.getReportDate())
@@ -55,6 +56,7 @@ public class ProgressReportService {
     public List<ProgressReportResponse> getProgressReportsByProject(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
+        projectAccessService.checkProjectAccess(project, currentUser);
 
         return progressReportRepository.findByProjectOrderByReportDateDesc(project)
                 .stream()
@@ -66,15 +68,15 @@ public class ProgressReportService {
     public ProgressReportResponse getProgressReportById(Long progressReportId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         ProgressReport progressReport = getProgressReport(progressReportId);
-        checkProjectReportReadAuthority(progressReport.getProject().getId(), currentUser);
+        projectAccessService.checkProjectAccess(progressReport.getProject(), currentUser);
         return toResponse(progressReport);
     }
 
 //    updateReport()
     public ProgressReportResponse updateProgressReport(Long progressReportId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
-        checkProjectReportWriteAuthority(progressReportId, currentUser);
         ProgressReport progressReport = getProgressReport(progressReportId);
+        projectAccessService.checkProjectAccess(progressReport.getProject(), currentUser);
         if (progressReportRequest.getReportDate() != null) {
             progressReport.setReportDate(progressReportRequest.getReportDate());
         }
@@ -93,8 +95,8 @@ public class ProgressReportService {
 //    deleteReport()
     public void deleteProgressReportById(Long progressReportId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
-        checkProjectReportWriteAuthority(progressReportId, currentUser);
         ProgressReport progressReport = getProgressReport(progressReportId);
+        projectAccessService.checkProjectAccess(progressReport.getProject(), currentUser);
         progressReportRepository.delete(progressReport);
 
     }
@@ -107,22 +109,6 @@ public class ProgressReportService {
     private ProgressReport getProgressReport(Long id) {
         return progressReportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Progress Report not found"));
-    }
-
-    private void checkProjectReportReadAuthority(Long projectId, User currentUser) {
-        boolean noPermission = false;
-        //  TODO: add authentication logic
-
-        if (noPermission) {
-            throw new IllegalArgumentException("You do not have permission to read this progress report");
-        }
-    }
-    private void checkProjectReportWriteAuthority(Long projectId, User currentUser) {
-        boolean noPermission = false;
-        //  TODO: add authentication logic
-        if (noPermission) {
-            throw new IllegalArgumentException("You do not have permission to write this progress report");
-        }
     }
 
     private ProgressReportResponse toResponse(ProgressReport progressReport) {
