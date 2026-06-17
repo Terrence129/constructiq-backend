@@ -1,5 +1,6 @@
 package com.constructiq.entity;
 
+import com.constructiq.enums.ProjectMemberRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -32,6 +33,10 @@ public class UserProjectRegistration {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private ProjectMemberRole role;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -41,6 +46,10 @@ public class UserProjectRegistration {
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
+
+        if (this.role == null) {
+            this.role = ProjectMemberRole.MEMBER;
+        }
     }
 
     @PreUpdate

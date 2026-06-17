@@ -35,7 +35,7 @@ public class ProgressReportService {
     public ProgressReportResponse createProgressReport(Long projectId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
-        projectAccessService.checkProjectAccess(project, currentUser);
+        projectAccessService.checkProjectManagementAccess(project, currentUser);
         ProgressReport  progressReport = ProgressReport.builder()
                 .project(project)
                 .reportDate(progressReportRequest.getReportDate())
@@ -76,7 +76,7 @@ public class ProgressReportService {
     public ProgressReportResponse updateProgressReport(Long progressReportId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         ProgressReport progressReport = getProgressReport(progressReportId);
-        projectAccessService.checkProjectAccess(progressReport.getProject(), currentUser);
+        projectAccessService.checkProjectManagementAccess(progressReport.getProject(), currentUser);
         if (progressReportRequest.getReportDate() != null) {
             progressReport.setReportDate(progressReportRequest.getReportDate());
         }

@@ -2,10 +2,12 @@ package com.constructiq.dto.request;
 
 import com.constructiq.enums.ProjectStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * @description:
@@ -31,4 +33,7 @@ public class ProjectRequest {
     private LocalDate startDate;
 
     private LocalDate endDate;
+
+    @Valid
+    private List<UserProjectRegistrationRequest> members;
 }

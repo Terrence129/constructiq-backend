@@ -5,6 +5,7 @@ import com.constructiq.dto.response.UserProjectRegistrationResponse;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
 import com.constructiq.entity.UserProjectRegistration;
+import com.constructiq.enums.ProjectMemberRole;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.UserProjectRegistrationRepository;
@@ -34,10 +35,14 @@ public class UserProjectRegistrationService {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
 
-        projectAccessService.checkProjectCreator(project, currentUser);
+        projectAccessService.checkProjectManagementAccess(project, currentUser);
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (project.getCreatedBy().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Project creator does not need a project registration");
+        }
 
         if (registrationRepository.existsByUserAndProject(user, project)) {
             throw new IllegalArgumentException("User is already registered to this project");
@@ -48,6 +53,7 @@ public class UserProjectRegistrationService {
                 .project(project)
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .role(request.getRole() == null ? ProjectMemberRole.MEMBER : request.getRole())
                 .build();
 
         return toResponse(registrationRepository.save(registration));
@@ -57,7 +63,7 @@ public class UserProjectRegistrationService {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
 
-        projectAccessService.checkProjectCreator(project, currentUser);
+        projectAccessService.checkProjectManagementAccess(project, currentUser);
 
         return registrationRepository.findByProject(project)
                 .stream()
@@ -69,7 +75,7 @@ public class UserProjectRegistrationService {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
 
-        projectAccessService.checkProjectCreator(project, currentUser);
+        projectAccessService.checkProjectManagementAccess(project, currentUser);
 
         UserProjectRegistration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
@@ -96,6 +102,7 @@ public class UserProjectRegistrationService {
                 .projectName(registration.getProject().getName())
                 .title(registration.getTitle())
                 .description(registration.getDescription())
+                .role(registration.getRole())
                 .createdAt(registration.getCreatedAt())
                 .updatedAt(registration.getUpdatedAt())
                 .build();

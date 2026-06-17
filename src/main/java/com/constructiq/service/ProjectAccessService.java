@@ -2,6 +2,7 @@ package com.constructiq.service;
 
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
+import com.constructiq.enums.ProjectMemberRole;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.UserProjectRegistrationRepository;
@@ -43,10 +44,26 @@ public class ProjectAccessService {
         return project;
     }
 
-    public void checkProjectCreator(Project project, User user) {
-        if (project == null || user == null || project.getCreatedBy() == null
-                || !project.getCreatedBy().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Only the project creator can manage registrations");
+    public void checkProjectManagementAccess(Project project, User user) {
+        if (!hasProjectManagementAccess(project, user)) {
+            throw new AccessDeniedException("You do not have permission to manage this project");
         }
+    }
+
+    public boolean hasProjectManagementAccess(Project project, User user) {
+        if (project == null || user == null || project.getCreatedBy() == null
+                || project.getId() == null || user.getId() == null) {
+            return false;
+        }
+
+        if (project.getCreatedBy().getId().equals(user.getId())) {
+            return true;
+        }
+
+        return registrationRepository.existsByUserIdAndProjectIdAndRole(
+                user.getId(),
+                project.getId(),
+                ProjectMemberRole.MANAGER
+        );
     }
 }

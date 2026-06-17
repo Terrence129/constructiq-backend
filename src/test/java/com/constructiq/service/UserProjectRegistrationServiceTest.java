@@ -4,6 +4,7 @@ import com.constructiq.dto.request.UserProjectRegistrationRequest;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
 import com.constructiq.entity.UserProjectRegistration;
+import com.constructiq.enums.ProjectMemberRole;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.repository.UserRepository;
@@ -57,9 +58,9 @@ class UserProjectRegistrationServiceTest {
 
         when(utils.getCurrentUser(authentication)).thenReturn(registeredUser);
         when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
-        org.mockito.Mockito.doThrow(new AccessDeniedException("Only the project creator can manage registrations"))
+        org.mockito.Mockito.doThrow(new AccessDeniedException("You do not have permission to manage this project"))
                 .when(projectAccessService)
-                .checkProjectCreator(project, registeredUser);
+                .checkProjectManagementAccess(project, registeredUser);
 
         assertThatThrownBy(() -> registrationService.createRegistration(10L, request, authentication))
                 .isInstanceOf(AccessDeniedException.class);
@@ -84,6 +85,33 @@ class UserProjectRegistrationServiceTest {
                 .hasMessage("User is already registered to this project");
 
         verify(registrationRepository, never()).save(any(UserProjectRegistration.class));
+    }
+
+    @Test
+    void createRegistrationDefaultsRoleToMember() {
+        User creator = User.builder().id(1L).build();
+        User targetUser = User.builder().id(2L).build();
+        Project project = Project.builder().id(10L).createdBy(creator).build();
+        UserProjectRegistrationRequest request = requestForUser(2L);
+
+        when(utils.getCurrentUser(authentication)).thenReturn(creator);
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(targetUser));
+        when(registrationRepository.existsByUserAndProject(targetUser, project)).thenReturn(false);
+        when(registrationRepository.save(any(UserProjectRegistration.class)))
+                .thenAnswer(invocation -> {
+                    UserProjectRegistration registration = invocation.getArgument(0);
+                    registration.setId(100L);
+                    return registration;
+                });
+
+        registrationService.createRegistration(10L, request, authentication);
+
+        org.mockito.ArgumentCaptor<UserProjectRegistration> captor =
+                org.mockito.ArgumentCaptor.forClass(UserProjectRegistration.class);
+        verify(registrationRepository).save(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue().getRole())
+                .isEqualTo(ProjectMemberRole.MEMBER);
     }
 
     private UserProjectRegistrationRequest requestForUser(Long userId) {

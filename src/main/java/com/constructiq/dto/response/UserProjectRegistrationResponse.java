@@ -1,5 +1,6 @@
 package com.constructiq.dto.response;
 
+import com.constructiq.enums.ProjectMemberRole;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,6 +18,7 @@ public class UserProjectRegistrationResponse {
     private String projectName;
     private String title;
     private String description;
+    private ProjectMemberRole role;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
