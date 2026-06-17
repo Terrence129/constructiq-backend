@@ -22,10 +22,10 @@ public class Document {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @Column(name = "file_name", nullable = false, length = 255)
+    @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Column(name = "stored_file_name", nullable = false, length = 255)
+    @Column(name = "stored_file_name", nullable = false)
     private String storedFileName;
 
     @Column(name = "file_path", nullable = false, length = 500)
