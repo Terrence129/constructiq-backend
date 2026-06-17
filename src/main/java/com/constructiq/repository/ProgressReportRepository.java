@@ -15,4 +15,6 @@ import java.util.List;
 public interface ProgressReportRepository extends JpaRepository<ProgressReport, Long> {
 
     List<ProgressReport> findByProjectOrderByReportDateDesc(Project project);
+
+    long countByProjectIn(List<Project> projects);
 }
