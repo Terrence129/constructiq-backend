@@ -73,6 +73,8 @@ New users registered through `POST /api/auth/register` are created with role `US
 | List documents under a project | Project creator or registered project member. |
 | Read/download a document | Project creator or registered project member. |
 | Upload/delete a document | Project creator or project member with role `MANAGER`. |
+| View dashboard statistics | Authenticated user. Includes only projects the user can access. |
+| Create/read dashboard statistics snapshots | Authenticated user. Snapshots are scoped to the current user. |
 
 ## Common Response Types
 
@@ -1281,6 +1283,111 @@ Successful response:
 ```
 
 The response body is empty.
+
+## Dashboard API
+
+Dashboard statistics are scoped to the authenticated user. The API counts projects the user created and projects where the user is registered.
+
+The live statistics endpoint does not write to the database. Snapshot endpoints use the `dashboard_statistics_snapshots` table.
+
+### Dashboard Statistics Object
+
+```json
+{
+  "snapshotId": null,
+  "userId": 2,
+  "userName": "Dashboard User",
+  "totalProjects": 3,
+  "activeProjects": 1,
+  "completedProjects": 1,
+  "totalTasks": 8,
+  "openTasks": 5,
+  "completedTasks": 3,
+  "overdueTasks": 2,
+  "totalRisks": 6,
+  "openRisks": 4,
+  "highRisks": 2,
+  "criticalRisks": 1,
+  "progressReports": 7,
+  "documents": 9,
+  "generatedAt": "2026-06-17T20:04:31.000"
+}
+```
+
+### Get Live Dashboard Statistics
+
+Returns current aggregate statistics for the authenticated user.
+
+```http
+GET /api/dashboard/statistics
+Authorization: Bearer <token>
+```
+
+Included counts:
+
+| Field | Description |
+| --- | --- |
+| `totalProjects` | Accessible project count. |
+| `activeProjects` | Accessible projects with status `ACTIVE`. |
+| `completedProjects` | Accessible projects with status `COMPLETED`. |
+| `totalTasks` | Tasks under accessible projects. |
+| `openTasks` | Tasks under accessible projects where status is not `DONE`. |
+| `completedTasks` | Tasks under accessible projects with status `DONE`. |
+| `overdueTasks` | Tasks under accessible projects with due date before today and status not `DONE`. |
+| `totalRisks` | Risks under accessible projects. |
+| `openRisks` | Risks under accessible projects where status is not `CLOSED`. |
+| `highRisks` | Risks under accessible projects with risk level `HIGH`. |
+| `criticalRisks` | Risks under accessible projects with risk level `CRITICAL`. |
+| `progressReports` | Progress reports under accessible projects. |
+| `documents` | Documents under accessible projects. |
+
+### Create Dashboard Statistics Snapshot
+
+Calculates current statistics and stores them in `dashboard_statistics_snapshots`.
+
+```http
+POST /api/dashboard/statistics/snapshots
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+{
+  "snapshotId": 100,
+  "userId": 2,
+  "userName": "Dashboard User",
+  "totalProjects": 3,
+  "activeProjects": 1,
+  "completedProjects": 1,
+  "totalTasks": 8,
+  "openTasks": 5,
+  "completedTasks": 3,
+  "overdueTasks": 2,
+  "totalRisks": 6,
+  "openRisks": 4,
+  "highRisks": 2,
+  "criticalRisks": 1,
+  "progressReports": 7,
+  "documents": 9,
+  "generatedAt": "2026-06-17T20:04:31.000"
+}
+```
+
+### Get Latest Dashboard Statistics Snapshot
+
+Returns the latest saved snapshot for the authenticated user.
+
+```http
+GET /api/dashboard/statistics/snapshots/latest
+Authorization: Bearer <token>
+```
+
+Failure cases:
+
+| Status | Reason |
+| --- | --- |
+| `404` | The user has no saved dashboard statistics snapshot. |
 
 ## Quick Workflow Example
 

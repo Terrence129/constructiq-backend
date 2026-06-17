@@ -9,4 +9,6 @@ import java.util.List;
 public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     List<Document> findByProjectOrderByCreatedAtDesc(Project project);
+
+    long countByProjectIn(List<Project> projects);
 }
