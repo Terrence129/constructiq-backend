@@ -70,6 +70,9 @@ New users registered through `POST /api/auth/register` are created with role `US
 | List risks under a project | Project creator or registered project member. |
 | Read a risk | Project creator or registered project member. |
 | Create/update/delete a risk | Project creator or project member with role `MANAGER`. |
+| List documents under a project | Project creator or registered project member. |
+| Read/download a document | Project creator or registered project member. |
+| Upload/delete a document | Project creator or project member with role `MANAGER`. |
 
 ## Common Response Types
 
@@ -1127,6 +1130,147 @@ The authenticated user must be the project creator or a project member with role
 
 ```http
 DELETE /api/risks/{riskId}
+Authorization: Bearer <token>
+```
+
+Successful response:
+
+```text
+200 OK
+```
+
+The response body is empty.
+
+## Documents API
+
+Documents are stored on the local filesystem under the configured upload directory.
+
+Default local upload directory:
+
+```properties
+app.upload-dir=uploads
+```
+
+Uploaded file metadata is stored in the `documents` table. The file itself is stored under:
+
+```text
+{app.upload-dir}/projects/{projectId}
+```
+
+### Document Object
+
+```json
+{
+  "id": 1100,
+  "projectId": 10,
+  "projectName": "Harbour Tower",
+  "fileName": "site-plan.pdf",
+  "fileUrl": "/api/documents/1100/download",
+  "fileType": "application/pdf",
+  "fileSize": 204800,
+  "uploadedById": 1,
+  "uploadedByName": "Admin User",
+  "createdAt": "2026-06-17T19:18:52.000",
+  "updatedAt": null
+}
+```
+
+### Upload Document
+
+The authenticated user must be the project creator or a project member with role `MANAGER`.
+
+```http
+POST /api/projects/{projectId}/documents/upload
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+Form fields:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `file` | file | Yes | Uploaded document file. |
+
+Example response:
+
+```json
+{
+  "id": 1100,
+  "projectId": 10,
+  "projectName": "Harbour Tower",
+  "fileName": "site-plan.pdf",
+  "fileUrl": "/api/documents/1100/download",
+  "fileType": "application/pdf",
+  "fileSize": 204800,
+  "uploadedById": 1,
+  "uploadedByName": "Admin User",
+  "createdAt": "2026-06-17T19:18:52.000",
+  "updatedAt": null
+}
+```
+
+### List Documents By Project
+
+The authenticated user must be the project creator or a registered project member.
+
+```http
+GET /api/projects/{projectId}/documents
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+[
+  {
+    "id": 1100,
+    "projectId": 10,
+    "projectName": "Harbour Tower",
+    "fileName": "site-plan.pdf",
+    "fileUrl": "/api/documents/1100/download",
+    "fileType": "application/pdf",
+    "fileSize": 204800,
+    "uploadedById": 1,
+    "uploadedByName": "Admin User",
+    "createdAt": "2026-06-17T19:18:52.000",
+    "updatedAt": null
+  }
+]
+```
+
+### Get Document Metadata
+
+The authenticated user must be the project creator or a registered project member.
+
+```http
+GET /api/documents/{documentId}
+Authorization: Bearer <token>
+```
+
+### Download Document
+
+The authenticated user must be the project creator or a registered project member.
+
+```http
+GET /api/documents/{documentId}/download
+Authorization: Bearer <token>
+```
+
+Successful response:
+
+```text
+200 OK
+Content-Disposition: attachment; filename="site-plan.pdf"
+```
+
+The response body is the binary file content.
+
+### Delete Document
+
+The authenticated user must be the project creator or a project member with role `MANAGER`.
+
+```http
+DELETE /api/documents/{documentId}
 Authorization: Bearer <token>
 ```
 
