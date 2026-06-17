@@ -67,6 +67,9 @@ New users registered through `POST /api/auth/register` are created with role `US
 | List progress reports under a project | Project creator or registered project member. |
 | Read a progress report | Project creator or registered project member. |
 | Create/update/delete a progress report | Project creator or project member with role `MANAGER`. |
+| List risks under a project | Project creator or registered project member. |
+| Read a risk | Project creator or registered project member. |
+| Create/update/delete a risk | Project creator or project member with role `MANAGER`. |
 
 ## Common Response Types
 
@@ -133,6 +136,38 @@ LOW
 MEDIUM
 HIGH
 CRITICAL
+```
+
+### RiskCategory
+
+```text
+SAFETY
+SCHEDULE
+COST
+QUALITY
+DESIGN
+PROCUREMENT
+ENVIRONMENT
+LEGAL
+GENERAL
+```
+
+### RiskLevel
+
+```text
+LOW
+MEDIUM
+HIGH
+CRITICAL
+```
+
+### RiskStatus
+
+```text
+OPEN
+MITIGATING
+MONITORING
+CLOSED
 ```
 
 ## Authentication API
@@ -963,6 +998,135 @@ The authenticated user must be the project creator or a project member with role
 
 ```http
 DELETE /api/progressReports/{progressReportId}
+Authorization: Bearer <token>
+```
+
+Successful response:
+
+```text
+200 OK
+```
+
+The response body is empty.
+
+## Risks API
+
+Risk severity is calculated by the backend:
+
+```text
+severity = probability * impact
+```
+
+Risk level is derived from severity:
+
+| Severity | Risk level |
+| --- | --- |
+| `1-5` | `LOW` |
+| `6-10` | `MEDIUM` |
+| `11-15` | `HIGH` |
+| `16-25` | `CRITICAL` |
+
+### Risk Object
+
+```json
+{
+  "id": 900,
+  "projectId": 10,
+  "projectName": "Harbour Tower",
+  "title": "Steel delivery delay",
+  "description": "Structural steel delivery may delay critical path work.",
+  "category": "SCHEDULE",
+  "probability": 4,
+  "impact": 5,
+  "severity": 20,
+  "riskLevel": "CRITICAL",
+  "status": "OPEN",
+  "mitigationPlan": "Confirm alternate supplier and resequence non-critical tasks.",
+  "owner": "Site Manager",
+  "targetDate": "2026-07-20",
+  "createdById": 1,
+  "createdByName": "Admin User",
+  "createdAt": "2026-06-17T18:42:38.000",
+  "updatedAt": null
+}
+```
+
+### Create Risk
+
+The authenticated user must be the project creator or a project member with role `MANAGER`.
+
+```http
+POST /api/projects/{projectId}/risks
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Request body:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | Yes | Not blank. |
+| `description` | string | No | Risk description. |
+| `category` | RiskCategory | No | Defaults to `GENERAL`. |
+| `probability` | number | Yes | Integer from `1` to `5`. |
+| `impact` | number | Yes | Integer from `1` to `5`. |
+| `status` | RiskStatus | No | Defaults to `OPEN`. |
+| `mitigationPlan` | string | No | Planned mitigation. |
+| `owner` | string | No | Free-text owner name. |
+| `targetDate` | date | No | Format `YYYY-MM-DD`. |
+
+Example request:
+
+```json
+{
+  "title": "Steel delivery delay",
+  "description": "Structural steel delivery may delay critical path work.",
+  "category": "SCHEDULE",
+  "probability": 4,
+  "impact": 5,
+  "status": "OPEN",
+  "mitigationPlan": "Confirm alternate supplier and resequence non-critical tasks.",
+  "owner": "Site Manager",
+  "targetDate": "2026-07-20"
+}
+```
+
+### List Risks By Project
+
+The authenticated user must be the project creator or a registered project member.
+
+```http
+GET /api/projects/{projectId}/risks
+Authorization: Bearer <token>
+```
+
+### Get Risk By ID
+
+The authenticated user must be the project creator or a registered project member.
+
+```http
+GET /api/risks/{riskId}
+Authorization: Bearer <token>
+```
+
+### Update Risk
+
+The authenticated user must be the project creator or a project member with role `MANAGER`.
+
+```http
+PUT /api/risks/{riskId}
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+The request body uses the same fields as create. The backend recalculates `severity` and `riskLevel` when `probability` or `impact` changes.
+
+### Delete Risk
+
+The authenticated user must be the project creator or a project member with role `MANAGER`.
+
+```http
+DELETE /api/risks/{riskId}
 Authorization: Bearer <token>
 ```
 
