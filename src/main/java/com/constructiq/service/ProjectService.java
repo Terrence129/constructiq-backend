@@ -1,18 +1,30 @@
 package com.constructiq.service;
 
 import com.constructiq.dto.request.ProjectRequest;
+import com.constructiq.dto.request.UserProjectRegistrationRequest;
 import com.constructiq.dto.response.ProjectResponse;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
+import com.constructiq.entity.UserProjectRegistration;
+import com.constructiq.enums.ProjectMemberRole;
 import com.constructiq.enums.ProjectStatus;
+import com.constructiq.enums.UserRole;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
+import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.repository.UserRepository;
+import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 /**
  * @description:
  * @author: chenyaqi
@@ -24,10 +36,23 @@ import java.util.List;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final UserProjectRegistrationRepository registrationRepository;
     private final UserRepository userRepository;
+    private final ProjectAccessService projectAccessService;
+    private final Utils utils;
 
+    @Transactional
     public ProjectResponse createProject(ProjectRequest request, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
+
+        if (currentUser.getRole() != UserRole.ADMIN) {
+            throw new AccessDeniedException("Only admins can create projects");
+        }
+
+        List<UserProjectRegistrationRequest> members = request.getMembers() == null
+                ? List.of()
+                : request.getMembers();
+        validateInitialMembers(members, currentUser);
 
         Project project = Project.builder()
                 .name(request.getName())
@@ -42,14 +67,28 @@ public class ProjectService {
 
         Project savedProject = projectRepository.save(project);
 
+        members.stream()
+                .map(member -> buildRegistration(savedProject, member))
+                .forEach(registrationRepository::save);
+
         return toResponse(savedProject);
     }
 
     public List<ProjectResponse> getMyProjects(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 
-        return projectRepository.findByCreatedByOrderByCreatedAtDesc(currentUser)
-                .stream()
+        Map<Long, Project> accessibleProjects = new LinkedHashMap<>();
+
+        projectRepository.findByCreatedByOrderByCreatedAtDesc(currentUser)
+                .forEach(project -> accessibleProjects.put(project.getId(), project));
+
+        registrationRepository.findByUser(currentUser)
+                .forEach(registration -> accessibleProjects.putIfAbsent(
+                        registration.getProject().getId(),
+                        registration.getProject()
+                ));
+
+        return accessibleProjects.values().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -60,7 +99,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkOwnership(project, currentUser);
+        projectAccessService.checkProjectAccess(project, currentUser);
 
         return toResponse(project);
     }
@@ -71,7 +110,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkOwnership(project, currentUser);
+        projectAccessService.checkProjectManagementAccess(project, currentUser);
         if (request.getName() != null) {
             project.setName(request.getName());
         }
@@ -97,22 +136,40 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        checkOwnership(project, currentUser);
+        projectAccessService.checkProjectManagementAccess(project, currentUser);
 
         projectRepository.delete(project);
     }
 
     private User getCurrentUser(Authentication authentication) {
-//        String email = authentication.getName();
-        String email = "peacefulterrence@gmail.com";  // dev environment
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        return utils.getCurrentUser(authentication);
     }
 
-    private void checkOwnership(Project project, User currentUser) {
-        if (!project.getCreatedBy().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("You do not have permission to access this project");
+    private void validateInitialMembers(List<UserProjectRegistrationRequest> members, User currentUser) {
+        Set<Long> userIds = new HashSet<>();
+
+        for (UserProjectRegistrationRequest member : members) {
+            if (currentUser.getId().equals(member.getUserId())) {
+                throw new IllegalArgumentException("Project creator does not need a project registration");
+            }
+
+            if (!userIds.add(member.getUserId())) {
+                throw new IllegalArgumentException("Project member list contains duplicate users");
+            }
         }
+    }
+
+    private UserProjectRegistration buildRegistration(Project project, UserProjectRegistrationRequest request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return UserProjectRegistration.builder()
+                .user(user)
+                .project(project)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .role(request.getRole() == null ? ProjectMemberRole.MEMBER : request.getRole())
+                .build();
     }
 
     private ProjectResponse toResponse(Project project) {
