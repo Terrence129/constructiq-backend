@@ -1,178 +1,135 @@
 # ConstructIQ Backend
 
-## Overview
+ConstructIQ Backend is a Spring Boot API for a construction project management platform. It supports user authentication, project ownership, project team registration, tasks, progress reports, risks, document uploads, and dashboard statistics.
 
-ConstructIQ is an AI-powered Construction Project Management Platform designed to help engineering and construction teams manage projects, tasks, risks, progress reports, and project documentation.
+## Current Capabilities
 
-The platform aims to improve project visibility, collaboration, and decision-making by combining traditional project management workflows with AI-assisted risk analysis.
+### Authentication and Security
 
-This repository contains the backend service built with Spring Boot.
-
----
-
-## Features
-
-### Authentication & Authorization
-
-* User registration
-* User login
-* JWT authentication
-* Protected REST APIs
-* Role-based foundation for future expansion
+* User registration and login
+* JWT-based stateless authentication
+* BCrypt password hashing
+* Protected API endpoints outside `/api/auth/**`
+* CORS configured for `http://localhost:5173`
 
 ### Project Management
 
-* Create project
-* Update project
-* Delete project
-* View project details
-* Project ownership validation
+* Create, list, view, update, and delete projects
+* Project ownership and access checks
+* Project status tracking
+* Project member registration records
 
-### Task Management
+### Work Tracking
 
-* Create tasks under projects
-* Update task status
-* Task priority management
-* Assignee tracking
-* Task ownership protection
+* Task CRUD under projects
+* Task status and priority management
+* Assignee and due-date tracking
+* Progress report CRUD under projects
 
-### Progress Report Management
+### Risk Management
 
-* Submit project progress reports
-* Track completed work
-* Record delayed work
-* Capture project issues
-* Define next actions
+* Risk CRUD under projects
+* Risk category, probability, impact, severity, level, and status tracking
+* Mitigation plan, owner, and target-date fields
 
-### Future Features
+### Documents
 
-* Risk Management
-* Document Management
-* AI Risk Analyzer
-* AI Progress Report Summarizer
-* Dashboard Analytics
-* AWS S3 Integration
-* Notification System
+* Multipart document upload by project
+* Document listing and metadata lookup
+* Document download
+* Document deletion
+* Local file storage under the configured upload directory
 
----
+### Dashboard
+
+* Current dashboard statistics
+* Dashboard statistics snapshots
+* Latest snapshot retrieval
 
 ## Technology Stack
 
-### Backend
-
 * Java 17
-* Spring Boot 3
+* Spring Boot 3.5.14
+* Spring Web
 * Spring Security
 * Spring Data JPA
-* Maven
-
-### Database
-
+* Spring Validation
+* Spring Actuator
 * PostgreSQL
-
-### Authentication
-
-* JWT (JSON Web Token)
-* BCrypt Password Encryption
-
-### API Documentation
-
-* Swagger / OpenAPI
-
-### Future Integrations
-
-* OpenAI API
-* AWS S3
-* Docker
-* CI/CD
-
----
+* Maven
+* Lombok
+* JJWT 0.12.6
+* JUnit and Spring Security Test
 
 ## Project Structure
 
 ```text
-src/main/java/com/constructiq
-
-├── controller
-├── service
-├── repository
-├── entity
-├── dto
-│   ├── request
-│   └── response
-├── security
-├── config
-├── exception
-├── enums
-└── util
+.
+|-- compose.yaml
+|-- docs
+|   |-- api-documentation.md
+|   |-- dashboard-statistics-schema.sql
+|   |-- document-upload-schema.sql
+|   |-- risk-register-schema.sql
+|   |-- script.sql
+|   `-- ...
+|-- pom.xml
+|-- src
+|   |-- main
+|   |   |-- java/com/constructiq
+|   |   |   |-- config
+|   |   |   |-- controller
+|   |   |   |-- dto
+|   |   |   |   |-- projection
+|   |   |   |   |-- request
+|   |   |   |   `-- response
+|   |   |   |-- entity
+|   |   |   |-- enums
+|   |   |   |-- exception
+|   |   |   |-- repository
+|   |   |   |-- security
+|   |   |   |-- service
+|   |   |   `-- util
+|   |   `-- resources
+|   |       `-- application.properties
+|   `-- test/java/com/constructiq
+|       `-- service
+`-- uploads
 ```
 
----
+## Main Packages
 
-## Database Design
+* `controller`: REST controllers for auth, users, projects, registrations, tasks, progress reports, risks, documents, and dashboard statistics.
+* `service`: Business logic and access validation.
+* `repository`: Spring Data JPA repositories.
+* `entity`: JPA entities for persisted domain models.
+* `dto.request`: Request payloads.
+* `dto.response`: Response payloads.
+* `dto.projection`: Repository projections.
+* `security`: JWT filter, JWT service, and custom user details service.
+* `config`: Spring Security and CORS configuration.
+* `exception`: Global exception handling and API error response types.
+* `enums`: Domain enums for users, projects, tasks, risks, and project membership.
+* `util`: Shared utility code.
 
-### Users
+## Data Model
 
-```text
-id
-name
-email
-password_hash
-role
-created_at
-updated_at
-```
+The current JPA model includes these main tables:
 
-### Projects
+* `users`
+* `projects`
+* `tasks`
+* `progress_reports`
+* `risks`
+* `documents`
+* `user_project_registrations`
+* `dashboard_statistics_snapshots`
 
-```text
-id
-name
-description
-location
-client_name
-status
-start_date
-end_date
-created_by
-created_at
-updated_at
-```
-
-### Tasks
-
-```text
-id
-project_id
-title
-description
-status
-priority
-assignee
-due_date
-created_at
-updated_at
-```
-
-### Progress Reports
-
-```text
-id
-project_id
-report_date
-summary
-completed_work
-delayed_work
-issues
-next_actions
-created_by
-created_at
-updated_at
-```
-
----
+Additional schema notes are available in `docs/*.sql`.
 
 ## API Endpoints
+
+Most endpoints require an `Authorization: Bearer <token>` header. Authentication endpoints are public.
 
 ### Authentication
 
@@ -180,6 +137,15 @@ updated_at
 POST /api/auth/register
 POST /api/auth/login
 ```
+
+### Users
+
+```http
+GET /api/users
+GET /api/users/{userId}
+```
+
+`GET /api/users` accepts optional `name` and `email` query parameters.
 
 ### Projects
 
@@ -189,6 +155,14 @@ GET    /api/projects
 GET    /api/projects/{id}
 PUT    /api/projects/{id}
 DELETE /api/projects/{id}
+```
+
+### Project Registrations
+
+```http
+POST   /api/projects/{projectId}/registrations
+GET    /api/projects/{projectId}/registrations
+DELETE /api/projects/{projectId}/registrations/{registrationId}
 ```
 
 ### Tasks
@@ -211,119 +185,140 @@ PUT    /api/progressReports/{progressReportId}
 DELETE /api/progressReports/{progressReportId}
 ```
 
----
+### Risks
+
+```http
+POST   /api/projects/{projectId}/risks
+GET    /api/projects/{projectId}/risks
+GET    /api/risks/{riskId}
+PUT    /api/risks/{riskId}
+DELETE /api/risks/{riskId}
+```
+
+### Documents
+
+```http
+POST   /api/projects/{projectId}/documents/upload
+GET    /api/projects/{projectId}/documents
+GET    /api/documents/{documentId}
+GET    /api/documents/{documentId}/download
+DELETE /api/documents/{documentId}
+```
+
+Document upload uses `multipart/form-data` with a `file` field.
+
+### Dashboard
+
+```http
+GET  /api/dashboard/statistics
+POST /api/dashboard/statistics/snapshots
+GET  /api/dashboard/statistics/snapshots/latest
+```
+
+### Development Test Endpoint
+
+```http
+GET /test/helloworld
+```
 
 ## Local Setup
 
 ### Prerequisites
 
 * Java 17
-* Maven
+* Maven or the included Maven wrapper
 * PostgreSQL
 
-### Clone Repository
+### Database
 
-```bash
-git clone https://github.com/your-username/constructiq-backend.git
-
-cd constructiq-backend
-```
-
-### Create Database
+Create a PostgreSQL database that matches `src/main/resources/application.properties`:
 
 ```sql
 CREATE DATABASE constructiq;
 ```
 
-### Configure Application
-
-Update:
+Default local datasource settings:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/constructiq
 spring.datasource.username=postgres
-spring.datasource.password=your_password
-
-jwt.secret=your_secret_key
-jwt.expiration=86400000
+spring.datasource.password=123456
 ```
 
-### Run Application
+Update these values for your local PostgreSQL user before running the service.
+
+### Application Settings
+
+Key settings live in `src/main/resources/application.properties`:
+
+```properties
+jwt.secret=CHANGE_THIS_TO_A_LONG_SECRET_KEY_AT_LEAST_32_CHARS
+jwt.expiration=86400000
+
+app.upload-dir=uploads
+spring.servlet.multipart.max-file-size=1024MB
+spring.servlet.multipart.max-request-size=1024MB
+```
+
+Use a strong JWT secret for non-local environments.
+
+### Run
+
+On Windows:
 
 ```bash
-mvn spring-boot:run
+mvnw.cmd spring-boot:run
 ```
 
-Application will start at:
+On macOS/Linux:
+
+```bash
+./mvnw spring-boot:run
+```
+
+The API starts at:
 
 ```text
 http://localhost:8080
 ```
 
----
+### Test
 
-## Development Workflow
-
-### Create Feature Branch
+On Windows:
 
 ```bash
-git checkout -b feature/project-crud
+mvnw.cmd test
 ```
 
-### Commit Convention
+On macOS/Linux:
 
 ```bash
-feat(auth): implement register and login
-
-feat(project): implement project CRUD
-
-feat(task): implement task management
-
-feat(report): implement progress report management
+./mvnw test
 ```
 
-### Pull Request Convention
+## Docker Compose Note
 
-```text
-feat(module): short description
-```
+`compose.yaml` defines a PostgreSQL container, but its default database, username, and password do not currently match `application.properties`. If you use Docker Compose for local development, update either the compose file or the Spring datasource settings so they point to the same database credentials.
 
-Example:
+## Documentation
 
-```text
-feat(task): implement task management
-```
+Additional project notes and SQL scripts are in `docs/`, including:
 
----
+* `docs/api-documentation.md`
+* `docs/script.sql`
+* `docs/risk-register-schema.sql`
+* `docs/document-upload-schema.sql`
+* `docs/dashboard-statistics-schema.sql`
 
 ## Roadmap
 
-### Phase 1
+Planned or likely future work:
 
-* Authentication
-* Project CRUD
-* Task Management
-* Progress Reports
-
-### Phase 2
-
-* Risk Management
-* File Upload
-* Dashboard Analytics
-
-### Phase 3
-
-* AI Risk Analysis
-* AI Progress Summarization
-* AI Project Insights
-
-### Phase 4
-
-* AWS Deployment
-* Docker
-* CI/CD Pipeline
-
----
+* AI risk analysis
+* AI progress report summarization
+* Cloud object storage integration
+* Notification workflows
+* CI/CD and deployment hardening
 
 ## Author
 
