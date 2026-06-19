@@ -1,8 +1,12 @@
 package com.constructiq.repository;
 
+import com.constructiq.dto.projection.UserSummaryProjection;
 import com.constructiq.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,4 +19,23 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    @Query("""
+            select u.id as id, u.name as name, u.email as email, u.role as role
+            from User u
+            where (:name is null or lower(u.name) like concat(concat('%', :name), '%'))
+              and (:email is null or lower(u.email) like concat(concat('%', :email), '%'))
+            order by lower(u.name), lower(u.email), u.id
+            """)
+    List<UserSummaryProjection> findUserSummaries(
+            @Param("name") String name,
+            @Param("email") String email
+    );
+
+    @Query("""
+            select u.id as id, u.name as name, u.email as email, u.role as role
+            from User u
+            where u.id = :id
+            """)
+    Optional<UserSummaryProjection> findUserSummaryById(@Param("id") Long id);
 }
