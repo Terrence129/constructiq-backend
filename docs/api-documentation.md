@@ -61,6 +61,7 @@ New users registered through `POST /api/auth/register` are created with role `US
 | Update project | Project creator or project member with role `MANAGER`. |
 | Delete project | Project creator or project member with role `MANAGER`. |
 | Add/list/remove project registrations | Project creator or project member with role `MANAGER`. |
+| List/search/read users | Authenticated user. Returns public user fields only. |
 | List tasks under a project | Project creator or registered project member. |
 | Read a task | Project creator or registered project member. |
 | Create/update/delete a task | Project creator or project member with role `MANAGER`. |
@@ -258,6 +259,102 @@ Example response:
   }
 }
 ```
+
+## Users API
+
+User endpoints return only public user fields used by clients for member selection and display. Password hashes and other internal account data are never returned.
+
+### User Object
+
+```json
+{
+  "id": 2,
+  "name": "Jane Builder",
+  "email": "jane.builder@example.com",
+  "role": "USER"
+}
+```
+
+### List Users
+
+Returns all users ordered by name, email, and id.
+
+```http
+GET /api/users
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+[
+  {
+    "id": 2,
+    "name": "Jane Builder",
+    "email": "jane.builder@example.com",
+    "role": "USER"
+  }
+]
+```
+
+### Search Users
+
+Search is handled by the same list endpoint with optional query parameters. `name` and `email` are case-insensitive partial matches. When both are provided, both filters must match.
+
+```http
+GET /api/users?name=jane&email=example.com
+Authorization: Bearer <token>
+```
+
+Query parameters:
+
+| Parameter | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | string | No | Case-insensitive partial match on user name. |
+| `email` | string | No | Case-insensitive partial match on user email. |
+
+Example response:
+
+```json
+[
+  {
+    "id": 2,
+    "name": "Jane Builder",
+    "email": "jane.builder@example.com",
+    "role": "USER"
+  }
+]
+```
+
+### Get User By ID
+
+```http
+GET /api/users/{userId}
+Authorization: Bearer <token>
+```
+
+Path parameters:
+
+| Parameter | Type | Required |
+| --- | --- | --- |
+| `userId` | number | Yes |
+
+Example response:
+
+```json
+{
+  "id": 2,
+  "name": "Jane Builder",
+  "email": "jane.builder@example.com",
+  "role": "USER"
+}
+```
+
+Failure cases:
+
+| Status | Reason |
+| --- | --- |
+| `404` | User not found. |
 
 ## Projects API
 
