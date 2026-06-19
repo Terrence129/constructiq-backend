@@ -21,10 +21,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     @Query("""
+
             select u.id as id, u.name as name, u.email as email, u.role as role
             from User u
-            where (:name is null or lower(u.name) like concat(concat('%', :name), '%'))
-              and (:email is null or lower(u.email) like concat(concat('%', :email), '%'))
+            where (:name is null or lower(u.name) like concat('%', cast(:name as string), '%'))
+              and (:email is null or lower(u.email) like concat('%', cast(:email as string), '%'))
             order by lower(u.name), lower(u.email), u.id
             """)
     List<UserSummaryProjection> findUserSummaries(
