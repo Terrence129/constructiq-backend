@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: constructiq-postgres
+    environment:
+      POSTGRES_DB: constructiq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5432:5432"
+    volumes:
+      - constructiq-postgres-data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: constructiq-backend
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/constructiq
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 123456
+      JWT_SECRET: local-dev-secret-key-change-this-at-least-32-chars
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:5173
+    ports:
+      - "8080:8080"
+
+volumes:
+  constructiq-postgres-data:
