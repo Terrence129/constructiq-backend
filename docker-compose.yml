@@ -21,7 +21,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 123456
       JWT_SECRET: local-dev-secret-key-change-this-at-least-32-chars
-      APP_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:4173,http://constructiq-alb-722189741.ap-southeast-1.elb.amazonaws.com
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:4173,http://constructiq-alb-722189741.ap-southeast-1.elb.amazonaws.com,https://constructiq-frontend-kap8vidxw-tc129.vercel.app,https://constructiq.chenyaqi.com
     ports:
       - "8080:8080"
 
