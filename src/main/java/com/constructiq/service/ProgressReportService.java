@@ -5,15 +5,19 @@ import com.constructiq.dto.response.ProgressReportResponse;
 import com.constructiq.entity.ProgressReport;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
+import com.constructiq.entity.UserProjectRegistration;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProgressReportRepository;
 import com.constructiq.repository.ProjectRepository;
+import com.constructiq.repository.UserProjectRegistrationRepository;
 import org.springframework.security.core.Authentication;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description:
@@ -28,6 +32,7 @@ public class ProgressReportService {
 
     private final ProjectRepository projectRepository;
     private final ProgressReportRepository progressReportRepository;
+    private final UserProjectRegistrationRepository registrationRepository;
     private final Utils utils;
     private final ProjectAccessService projectAccessService;
 
@@ -59,6 +64,20 @@ public class ProgressReportService {
         projectAccessService.checkProjectAccess(project, currentUser);
 
         return progressReportRepository.findByProjectOrderByReportDateDesc(project)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<ProgressReportResponse> getMyReports(Authentication authentication) {
+        User currentUser = utils.getCurrentUser(authentication);
+        List<Project> accessibleProjects = getAccessibleProjects(currentUser);
+
+        if (accessibleProjects.isEmpty()) {
+            return List.of();
+        }
+
+        return progressReportRepository.findAccessibleProgressReports(accessibleProjects)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -109,6 +128,20 @@ public class ProgressReportService {
     private ProgressReport getProgressReport(Long id) {
         return progressReportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Progress Report not found"));
+    }
+
+    private List<Project> getAccessibleProjects(User currentUser) {
+        Map<Long, Project> accessibleProjects = new LinkedHashMap<>();
+
+        projectRepository.findByCreatedByOrderByCreatedAtDesc(currentUser)
+                .forEach(project -> accessibleProjects.put(project.getId(), project));
+
+        registrationRepository.findByUser(currentUser)
+                .stream()
+                .map(UserProjectRegistration::getProject)
+                .forEach(project -> accessibleProjects.putIfAbsent(project.getId(), project));
+
+        return List.copyOf(accessibleProjects.values());
     }
 
     private ProgressReportResponse toResponse(ProgressReport progressReport) {
