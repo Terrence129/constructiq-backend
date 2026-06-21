@@ -934,6 +934,37 @@ Example response:
 ]
 ```
 
+### List My Progress Reports
+
+Returns progress reports under projects the authenticated user can access. This includes projects created by the current user and projects where the current user is registered.
+
+```http
+GET /api/progressReports
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+[
+  {
+    "id": 700,
+    "projectId": 10,
+    "projectName": "Harbour Tower",
+    "reportDate": "2026-07-08",
+    "summary": "Weekly progress update.",
+    "completedWork": "Foundation inspection completed.",
+    "delayedWork": "None.",
+    "issues": "None.",
+    "nextActions": "Prepare next inspection checklist.",
+    "createdById": 1,
+    "createdByName": "Admin User",
+    "createdAt": "2026-06-17T15:55:37.123",
+    "updatedAt": null
+  }
+]
+```
+
 ### Get Progress Report By ID
 
 The authenticated user must be the project creator or a registered project member.

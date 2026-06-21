@@ -5,7 +5,6 @@ import com.constructiq.dto.response.ProgressReportResponse;
 import com.constructiq.service.ProgressReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,6 +36,11 @@ public class ProgressReportController {
             Authentication authentication
     ){
         return progressReportService.getProgressReportsByProject(projectId, authentication);
+    }
+
+    @GetMapping("/api/progressReports")
+    public List<ProgressReportResponse> getMyReports(Authentication authentication) {
+        return progressReportService.getMyReports(authentication);
     }
 
     @GetMapping("/api/progressReports/{progressReportId}")
