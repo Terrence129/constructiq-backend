@@ -5,18 +5,22 @@ import com.constructiq.dto.response.RiskResponse;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.Risk;
 import com.constructiq.entity.User;
+import com.constructiq.entity.UserProjectRegistration;
 import com.constructiq.enums.RiskCategory;
 import com.constructiq.enums.RiskLevel;
 import com.constructiq.enums.RiskStatus;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.ProjectRepository;
 import com.constructiq.repository.RiskRepository;
+import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +28,7 @@ public class RiskService {
 
     private final RiskRepository riskRepository;
     private final ProjectRepository projectRepository;
+    private final UserProjectRegistrationRepository registrationRepository;
     private final ProjectAccessService projectAccessService;
     private final Utils utils;
 
@@ -59,6 +64,25 @@ public class RiskService {
         projectAccessService.checkProjectAccess(project, currentUser);
 
         return riskRepository.findByProjectOrderByCreatedAtDesc(project)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<RiskResponse> getMyRisks(
+            RiskCategory category,
+            RiskLevel riskLevel,
+            RiskStatus status,
+            Authentication authentication
+    ) {
+        User currentUser = utils.getCurrentUser(authentication);
+        List<Project> accessibleProjects = getAccessibleProjects(currentUser);
+
+        if (accessibleProjects.isEmpty()) {
+            return List.of();
+        }
+
+        return riskRepository.findAccessibleRisks(accessibleProjects, category, riskLevel, status)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -128,6 +152,20 @@ public class RiskService {
     private Risk getRisk(Long riskId) {
         return riskRepository.findById(riskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Risk not found"));
+    }
+
+    private List<Project> getAccessibleProjects(User currentUser) {
+        Map<Long, Project> accessibleProjects = new LinkedHashMap<>();
+
+        projectRepository.findByCreatedByOrderByCreatedAtDesc(currentUser)
+                .forEach(project -> accessibleProjects.put(project.getId(), project));
+
+        registrationRepository.findByUser(currentUser)
+                .stream()
+                .map(UserProjectRegistration::getProject)
+                .forEach(project -> accessibleProjects.putIfAbsent(project.getId(), project));
+
+        return List.copyOf(accessibleProjects.values());
     }
 
     private int calculateSeverity(Integer probability, Integer impact) {

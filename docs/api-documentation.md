@@ -1245,6 +1245,57 @@ GET /api/projects/{projectId}/risks
 Authorization: Bearer <token>
 ```
 
+### List My Risks
+
+Returns risks under projects the authenticated user can access. By default, this returns all accessible risks. Use `category`, `riskLevel`, and `status` query parameters to filter the result.
+
+```http
+GET /api/risks
+Authorization: Bearer <token>
+```
+
+Query parameters:
+
+| Parameter | Type | Required | Allowed values |
+| --- | --- | --- | --- |
+| `category` | RiskCategory | No | `SAFETY`, `SCHEDULE`, `COST`, `QUALITY`, `DESIGN`, `PROCUREMENT`, `ENVIRONMENT`, `LEGAL`, `GENERAL` |
+| `riskLevel` | RiskLevel | No | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
+| `status` | RiskStatus | No | `OPEN`, `MITIGATING`, `MONITORING`, `CLOSED` |
+
+Example filtered request:
+
+```http
+GET /api/risks?category=SCHEDULE&riskLevel=CRITICAL&status=OPEN
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+[
+  {
+    "id": 900,
+    "projectId": 10,
+    "projectName": "Harbour Tower",
+    "title": "Steel delivery delay",
+    "description": "Structural steel delivery may delay critical path work.",
+    "category": "SCHEDULE",
+    "probability": 4,
+    "impact": 5,
+    "severity": 20,
+    "riskLevel": "CRITICAL",
+    "status": "OPEN",
+    "mitigationPlan": "Confirm alternate supplier and resequence non-critical tasks.",
+    "owner": "Site Manager",
+    "targetDate": "2026-07-20",
+    "createdById": 1,
+    "createdByName": "Admin User",
+    "createdAt": "2026-06-17T18:42:38.000",
+    "updatedAt": null
+  }
+]
+```
+
 ### Get Risk By ID
 
 The authenticated user must be the project creator or a registered project member.
