@@ -2,6 +2,8 @@ package com.constructiq.controller;
 
 import com.constructiq.dto.request.TaskRequest;
 import com.constructiq.dto.response.TaskResponse;
+import com.constructiq.enums.TaskPriority;
+import com.constructiq.enums.TaskStatus;
 import com.constructiq.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -61,5 +63,14 @@ public class TaskController {
             Authentication authentication
     ) {
         taskService.deleteTask(taskId, authentication);
+    }
+
+    @GetMapping("/api/tasks")
+    public List<TaskResponse> getMyTasks(
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) TaskPriority priority,
+            Authentication authentication
+    ) {
+        return taskService.getMyTasks(status, priority, authentication);
     }
 }
