@@ -1,6 +1,7 @@
 package com.constructiq.service;
 
 import com.constructiq.dto.response.DashboardStatisticsResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.DashboardStatisticsSnapshot;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
@@ -12,6 +13,8 @@ import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.*;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -34,11 +37,13 @@ public class DashboardService {
     private final DashboardStatisticsSnapshotRepository snapshotRepository;
     private final Utils utils;
 
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD_STATISTICS, key = "#authentication.name + ':current'")
     public DashboardStatisticsResponse getStatistics(Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         return buildStatistics(currentUser, null, LocalDateTime.now());
     }
 
+    @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
     public DashboardStatisticsResponse createSnapshot(Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         DashboardStatisticsResponse statistics = buildStatistics(currentUser, null, LocalDateTime.now());
@@ -64,6 +69,7 @@ public class DashboardService {
         return toResponse(snapshotRepository.save(snapshot));
     }
 
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD_STATISTICS, key = "#authentication.name + ':latestSnapshot'")
     public DashboardStatisticsResponse getLatestSnapshot(Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         DashboardStatisticsSnapshot snapshot = snapshotRepository.findFirstByUserOrderByGeneratedAtDesc(currentUser)

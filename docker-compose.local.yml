@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: constructiq-postgres
+    environment:
+      POSTGRES_DB: constructiq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5433:5432"
+    volumes:
+      - constructiq-postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: constructiq-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  constructiq-postgres-data:

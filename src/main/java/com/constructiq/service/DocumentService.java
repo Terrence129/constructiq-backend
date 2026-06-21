@@ -1,6 +1,7 @@
 package com.constructiq.service;
 
 import com.constructiq.dto.response.DocumentResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.Document;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
@@ -11,6 +12,9 @@ import com.constructiq.util.Utils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.security.core.Authentication;
@@ -38,6 +42,10 @@ public class DocumentService {
     @Value("${app.upload-dir:uploads}")
     private String uploadDir;
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.DOCUMENTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public DocumentResponse uploadDocument(Long projectId, MultipartFile file, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -89,6 +97,7 @@ public class DocumentService {
         return toResponse(documentRepository.save(savedDocument));
     }
 
+    @Cacheable(cacheNames = CacheConfig.DOCUMENTS, key = "#authentication.name + ':project:' + #projectId")
     public List<DocumentResponse> getDocumentsByProject(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -101,6 +110,7 @@ public class DocumentService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheConfig.DOCUMENTS, key = "#authentication.name + ':id:' + #documentId")
     public DocumentResponse getDocumentById(Long documentId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Document document = getDocument(documentId);
@@ -135,6 +145,10 @@ public class DocumentService {
         }
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.DOCUMENTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public void deleteDocument(Long documentId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Document document = getDocument(documentId);

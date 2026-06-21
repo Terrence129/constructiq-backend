@@ -6,12 +6,15 @@ import com.constructiq.enums.RiskStatus;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class RiskResponse {
+public class RiskResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long id;
     private Long projectId;

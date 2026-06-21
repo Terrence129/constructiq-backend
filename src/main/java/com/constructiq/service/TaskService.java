@@ -2,6 +2,7 @@ package com.constructiq.service;
 
 import com.constructiq.dto.request.TaskRequest;
 import com.constructiq.dto.response.TaskResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.Task;
 import com.constructiq.entity.User;
@@ -14,6 +15,9 @@ import com.constructiq.repository.TaskRepository;
 import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +41,10 @@ public class TaskService {
 
     private final Utils utils;
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public TaskResponse createTask(Long projectId, TaskRequest request, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProjectAndCheckManagement(projectId, currentUser);
@@ -56,6 +64,7 @@ public class TaskService {
         return toResponse(savedTask);
     }
 
+    @Cacheable(cacheNames = CacheConfig.TASKS, key = "#authentication.name + ':project:' + #projectId")
     public List<TaskResponse> getTasksByProject(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProjectAndCheckOwnership(projectId, currentUser);
@@ -66,6 +75,10 @@ public class TaskService {
                 .toList();
     }
 
+    @Cacheable(
+            cacheNames = CacheConfig.TASKS,
+            key = "#authentication.name + ':mine:' + (#status == null ? 'all' : #status.name()) + ':' + (#priority == null ? 'all' : #priority.name())"
+    )
     public List<TaskResponse> getMyTasks(
             TaskStatus status,
             TaskPriority priority,
@@ -84,6 +97,7 @@ public class TaskService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheConfig.TASKS, key = "#authentication.name + ':id:' + #taskId")
     public TaskResponse getTaskById(Long taskId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
 
@@ -94,6 +108,10 @@ public class TaskService {
         return toResponse(task);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public TaskResponse updateTask(Long taskId, TaskRequest request, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
 
@@ -122,6 +140,10 @@ public class TaskService {
         return toResponse(updatedTask);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public void deleteTask(Long taskId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
 

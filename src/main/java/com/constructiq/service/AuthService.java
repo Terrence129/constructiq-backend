@@ -4,11 +4,13 @@ import com.constructiq.dto.request.LoginRequest;
 import com.constructiq.dto.request.RegisterRequest;
 import com.constructiq.dto.response.AuthResponse;
 import com.constructiq.dto.response.UserResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.User;
 import com.constructiq.enums.UserRole;
 import com.constructiq.repository.UserRepository;
 import com.constructiq.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +32,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    @CacheEvict(cacheNames = CacheConfig.USERS, allEntries = true)
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists");

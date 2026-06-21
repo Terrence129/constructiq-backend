@@ -2,6 +2,7 @@ package com.constructiq.service;
 
 import com.constructiq.dto.request.RiskRequest;
 import com.constructiq.dto.response.RiskResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.Risk;
 import com.constructiq.entity.User;
@@ -15,6 +16,9 @@ import com.constructiq.repository.RiskRepository;
 import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +36,10 @@ public class RiskService {
     private final ProjectAccessService projectAccessService;
     private final Utils utils;
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public RiskResponse createRisk(Long projectId, RiskRequest request, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -57,6 +65,7 @@ public class RiskService {
         return toResponse(riskRepository.save(risk));
     }
 
+    @Cacheable(cacheNames = CacheConfig.RISKS, key = "#authentication.name + ':project:' + #projectId")
     public List<RiskResponse> getRisksByProject(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -69,6 +78,10 @@ public class RiskService {
                 .toList();
     }
 
+    @Cacheable(
+            cacheNames = CacheConfig.RISKS,
+            key = "#authentication.name + ':mine:' + (#category == null ? 'all' : #category.name()) + ':' + (#riskLevel == null ? 'all' : #riskLevel.name()) + ':' + (#status == null ? 'all' : #status.name())"
+    )
     public List<RiskResponse> getMyRisks(
             RiskCategory category,
             RiskLevel riskLevel,
@@ -88,6 +101,7 @@ public class RiskService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheConfig.RISKS, key = "#authentication.name + ':id:' + #riskId")
     public RiskResponse getRiskById(Long riskId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Risk risk = getRisk(riskId);
@@ -97,6 +111,10 @@ public class RiskService {
         return toResponse(risk);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public RiskResponse updateRisk(Long riskId, RiskRequest request, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Risk risk = getRisk(riskId);
@@ -135,6 +153,10 @@ public class RiskService {
         return toResponse(riskRepository.save(risk));
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public void deleteRisk(Long riskId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Risk risk = getRisk(riskId);
