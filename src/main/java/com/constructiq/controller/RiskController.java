@@ -2,6 +2,9 @@ package com.constructiq.controller;
 
 import com.constructiq.dto.request.RiskRequest;
 import com.constructiq.dto.response.RiskResponse;
+import com.constructiq.enums.RiskCategory;
+import com.constructiq.enums.RiskLevel;
+import com.constructiq.enums.RiskStatus;
 import com.constructiq.service.RiskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,16 @@ public class RiskController {
             Authentication authentication
     ) {
         return riskService.getRisksByProject(projectId, authentication);
+    }
+
+    @GetMapping("/api/risks")
+    public List<RiskResponse> getMyRisks(
+            @RequestParam(required = false) RiskCategory category,
+            @RequestParam(required = false) RiskLevel riskLevel,
+            @RequestParam(required = false) RiskStatus status,
+            Authentication authentication
+    ) {
+        return riskService.getMyRisks(category, riskLevel, status, authentication);
     }
 
     @GetMapping("/api/risks/{riskId}")
