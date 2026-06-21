@@ -846,6 +846,49 @@ Example response:
 ]
 ```
 
+### List My Tasks
+
+Returns tasks under projects the authenticated user can access. By default, this returns all accessible tasks. Use `status` and `priority` query parameters to filter the result.
+
+```http
+GET /api/tasks
+Authorization: Bearer <token>
+```
+
+Query parameters:
+
+| Parameter | Type | Required | Allowed values |
+| --- | --- | --- | --- |
+| `status` | TaskStatus | No | `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE` |
+| `priority` | TaskPriority | No | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
+
+Example filtered request:
+
+```http
+GET /api/tasks?status=IN_PROGRESS&priority=HIGH
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+[
+  {
+    "id": 500,
+    "projectId": 10,
+    "projectName": "Harbour Tower",
+    "title": "Inspect foundation works",
+    "description": "Confirm foundation preparation is complete.",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH",
+    "assignee": "Jane Builder",
+    "dueDate": "2026-07-15",
+    "createdAt": "2026-06-17T15:55:37.123",
+    "updatedAt": null
+  }
+]
+```
+
 ### Get Task By ID
 
 The authenticated user must be the project creator or a registered project member.
