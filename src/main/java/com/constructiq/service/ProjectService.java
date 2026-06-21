@@ -3,6 +3,7 @@ package com.constructiq.service;
 import com.constructiq.dto.request.ProjectRequest;
 import com.constructiq.dto.request.UserProjectRegistrationRequest;
 import com.constructiq.dto.response.ProjectResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
 import com.constructiq.entity.UserProjectRegistration;
@@ -15,6 +16,9 @@ import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.repository.UserRepository;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,11 @@ public class ProjectService {
     private final Utils utils;
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROJECTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.REGISTRATIONS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public ProjectResponse createProject(ProjectRequest request, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 
@@ -74,6 +83,7 @@ public class ProjectService {
         return toResponse(savedProject);
     }
 
+    @Cacheable(cacheNames = CacheConfig.PROJECTS, key = "#authentication.name + ':mine'")
     public List<ProjectResponse> getMyProjects(Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 
@@ -93,6 +103,7 @@ public class ProjectService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheConfig.PROJECTS, key = "#authentication.name + ':' + #id")
     public ProjectResponse getProjectById(Long id, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 
@@ -104,6 +115,15 @@ public class ProjectService {
         return toResponse(project);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROJECTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DOCUMENTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.REGISTRATIONS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public ProjectResponse updateProject(Long id, ProjectRequest request, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 
@@ -130,6 +150,15 @@ public class ProjectService {
         return toResponse(updatedProject);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROJECTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DOCUMENTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.REGISTRATIONS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public void deleteProject(Long id, Authentication authentication) {
         User currentUser = getCurrentUser(authentication);
 

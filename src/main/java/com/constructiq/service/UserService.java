@@ -2,9 +2,11 @@ package com.constructiq.service;
 
 import com.constructiq.dto.projection.UserSummaryProjection;
 import com.constructiq.dto.response.UserResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.exception.ResourceNotFoundException;
 import com.constructiq.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheConfig.USERS, key = "'search:' + T(java.util.Objects).toString(#name, '') + ':' + T(java.util.Objects).toString(#email, '')")
     public List<UserResponse> getUsers(String name, String email) {
         String normalizedName = normalize(name);
         String normalizedEmail = normalize(email);
@@ -28,6 +31,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheConfig.USERS, key = "'id:' + #userId")
     public UserResponse getUserById(Long userId) {
         return userRepository.findUserSummaryById(userId)
                 .map(this::toResponse)

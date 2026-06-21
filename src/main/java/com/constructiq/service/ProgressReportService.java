@@ -2,6 +2,7 @@ package com.constructiq.service;
 
 import com.constructiq.dto.request.ProgressReportRequest;
 import com.constructiq.dto.response.ProgressReportResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.ProgressReport;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
@@ -13,6 +14,9 @@ import com.constructiq.repository.UserProjectRegistrationRepository;
 import org.springframework.security.core.Authentication;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -37,6 +41,10 @@ public class ProgressReportService {
     private final ProjectAccessService projectAccessService;
 
 //    createReport()
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public ProgressReportResponse createProgressReport(Long projectId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -58,6 +66,7 @@ public class ProgressReportService {
 
 
     //    getReportsByProject()
+    @Cacheable(cacheNames = CacheConfig.PROGRESS_REPORTS, key = "#authentication.name + ':project:' + #projectId")
     public List<ProgressReportResponse> getProgressReportsByProject(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -69,6 +78,7 @@ public class ProgressReportService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheConfig.PROGRESS_REPORTS, key = "#authentication.name + ':mine'")
     public List<ProgressReportResponse> getMyReports(Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         List<Project> accessibleProjects = getAccessibleProjects(currentUser);
@@ -84,6 +94,7 @@ public class ProgressReportService {
     }
 
 //    getReportById()
+    @Cacheable(cacheNames = CacheConfig.PROGRESS_REPORTS, key = "#authentication.name + ':id:' + #progressReportId")
     public ProgressReportResponse getProgressReportById(Long progressReportId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         ProgressReport progressReport = getProgressReport(progressReportId);
@@ -92,6 +103,10 @@ public class ProgressReportService {
     }
 
 //    updateReport()
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public ProgressReportResponse updateProgressReport(Long progressReportId, ProgressReportRequest progressReportRequest, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         ProgressReport progressReport = getProgressReport(progressReportId);
@@ -112,6 +127,10 @@ public class ProgressReportService {
     }
 
 //    deleteReport()
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public void deleteProgressReportById(Long progressReportId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         ProgressReport progressReport = getProgressReport(progressReportId);

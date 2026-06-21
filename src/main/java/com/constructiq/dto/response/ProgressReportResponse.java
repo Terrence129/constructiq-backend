@@ -3,6 +3,7 @@ package com.constructiq.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 /**
@@ -13,7 +14,9 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Builder
-public class ProgressReportResponse {
+public class ProgressReportResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long id;
 

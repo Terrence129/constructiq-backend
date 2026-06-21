@@ -4,11 +4,14 @@ import com.constructiq.enums.ProjectMemberRole;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class UserProjectRegistrationResponse {
+public class UserProjectRegistrationResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long id;
     private Long userId;

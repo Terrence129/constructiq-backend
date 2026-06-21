@@ -2,6 +2,7 @@ package com.constructiq.service;
 
 import com.constructiq.dto.request.UserProjectRegistrationRequest;
 import com.constructiq.dto.response.UserProjectRegistrationResponse;
+import com.constructiq.config.CacheConfig;
 import com.constructiq.entity.Project;
 import com.constructiq.entity.User;
 import com.constructiq.entity.UserProjectRegistration;
@@ -12,6 +13,9 @@ import com.constructiq.repository.UserProjectRegistrationRepository;
 import com.constructiq.repository.UserRepository;
 import com.constructiq.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +31,15 @@ public class UserProjectRegistrationService {
     private final ProjectAccessService projectAccessService;
     private final Utils utils;
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROJECTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DOCUMENTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.REGISTRATIONS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public UserProjectRegistrationResponse createRegistration(
             Long projectId,
             UserProjectRegistrationRequest request,
@@ -59,6 +72,7 @@ public class UserProjectRegistrationService {
         return toResponse(registrationRepository.save(registration));
     }
 
+    @Cacheable(cacheNames = CacheConfig.REGISTRATIONS, key = "#authentication.name + ':project:' + #projectId")
     public List<UserProjectRegistrationResponse> getRegistrations(Long projectId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);
@@ -71,6 +85,15 @@ public class UserProjectRegistrationService {
                 .toList();
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheConfig.PROJECTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.TASKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.RISKS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.PROGRESS_REPORTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DOCUMENTS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.REGISTRATIONS, allEntries = true),
+            @CacheEvict(cacheNames = CacheConfig.DASHBOARD_STATISTICS, allEntries = true)
+    })
     public void deleteRegistration(Long projectId, Long registrationId, Authentication authentication) {
         User currentUser = utils.getCurrentUser(authentication);
         Project project = getProject(projectId);

@@ -3,11 +3,14 @@ package com.constructiq.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class DashboardStatisticsResponse {
+public class DashboardStatisticsResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long snapshotId;
     private Long userId;

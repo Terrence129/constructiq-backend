@@ -4,6 +4,8 @@ import com.constructiq.enums.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
+
 /**
  * @description:
  * @author: chenyaqi
@@ -12,7 +14,9 @@ import lombok.Getter;
  */
 @Getter
 @Builder
-public class UserResponse {
+public class UserResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long id;
     private String name;
