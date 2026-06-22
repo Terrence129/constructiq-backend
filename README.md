@@ -46,6 +46,13 @@ ConstructIQ Backend is a Spring Boot API for a construction project management p
 * Dashboard statistics snapshots
 * Latest snapshot retrieval
 
+### Redis Cache
+
+* Redis-backed Spring Cache integration
+* Cached service-layer reads for projects, tasks, risks, progress reports, documents, registrations, dashboard statistics, and users
+* User-scoped cache keys for permission-sensitive reads
+* Cache eviction on write operations to prevent stale responses
+
 ## Technology Stack
 
 * Java 17
@@ -56,6 +63,8 @@ ConstructIQ Backend is a Spring Boot API for a construction project management p
 * Spring Validation
 * Spring Actuator
 * PostgreSQL
+* Redis
+* Spring Cache
 * Maven
 * Lombok
 * JJWT 0.12.6
@@ -65,7 +74,7 @@ ConstructIQ Backend is a Spring Boot API for a construction project management p
 
 ```text
 .
-|-- compose.yaml
+|-- docker-compose.yml
 |-- docs
 |   |-- api-documentation.md
 |   |-- dashboard-statistics-schema.sql
@@ -107,7 +116,7 @@ ConstructIQ Backend is a Spring Boot API for a construction project management p
 * `dto.response`: Response payloads.
 * `dto.projection`: Repository projections.
 * `security`: JWT filter, JWT service, and custom user details service.
-* `config`: Spring Security and CORS configuration.
+* `config`: Spring Security, CORS, and Redis cache configuration.
 * `exception`: Global exception handling and API error response types.
 * `enums`: Domain enums for users, projects, tasks, risks, and project membership.
 * `util`: Shared utility code.
@@ -228,10 +237,20 @@ GET /test/helloworld
 * Java 17
 * Maven or the included Maven wrapper
 * PostgreSQL
+* Redis
+* Docker Desktop, if using Docker Compose
 
-### Database
+### Local Services
 
-Create a PostgreSQL database that matches `src/main/resources/application.properties`:
+For local development, run PostgreSQL and Redis. You can run them manually or with Docker Compose.
+
+If you use Docker Compose only for dependencies:
+
+```bash
+docker compose up postgres redis
+```
+
+Create a PostgreSQL database that matches `src/main/resources/application-local.properties`:
 
 ```sql
 CREATE DATABASE constructiq;
@@ -243,37 +262,41 @@ Default local datasource settings:
 spring.datasource.url=jdbc:postgresql://localhost:5432/constructiq
 spring.datasource.username=postgres
 spring.datasource.password=123456
+spring.data.redis.host=localhost
+spring.data.redis.port=6379
 ```
 
-Update these values for your local PostgreSQL user before running the service.
+Update these values for your local PostgreSQL and Redis setup before running the service.
 
 ### Application Settings
 
-Key settings live in `src/main/resources/application.properties`:
+Shared settings live in `src/main/resources/application.properties`. Local datasource and Redis settings live in `src/main/resources/application-local.properties`.
 
 ```properties
 jwt.secret=CHANGE_THIS_TO_A_LONG_SECRET_KEY_AT_LEAST_32_CHARS
 jwt.expiration=86400000
 
 app.upload-dir=uploads
-spring.servlet.multipart.max-file-size=1024MB
-spring.servlet.multipart.max-request-size=1024MB
+spring.cache.type=redis
+spring.data.redis.repositories.enabled=false
 ```
 
 Use a strong JWT secret for non-local environments.
 
 ### Run
 
+Use the `local` profile when running from IntelliJ IDEA or from the command line:
+
 On Windows:
 
 ```bash
-mvnw.cmd spring-boot:run
+mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 On macOS/Linux:
 
 ```bash
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 The API starts at:
@@ -281,6 +304,40 @@ The API starts at:
 ```text
 http://localhost:8080
 ```
+
+### Redis Cache Behavior
+
+Redis is used as a cache, not as the primary database. PostgreSQL remains the source of truth.
+
+The cache configuration is in `src/main/java/com/constructiq/config/CacheConfig.java`.
+
+Default cache behavior:
+
+```text
+Default TTL: 10 minutes
+Dashboard statistics TTL: 2 minutes
+Users TTL: 30 minutes
+Redis key prefix: constructiq:
+```
+
+Service methods use `@Cacheable` for repeated reads and `@CacheEvict` for writes. Permission-sensitive cache keys include the authenticated user's name so cached responses are scoped per user.
+
+To inspect Redis locally:
+
+```bash
+docker exec -it constructiq-redis redis-cli
+```
+
+Useful Redis commands:
+
+```redis
+KEYS constructiq:*
+TTL <key>
+DEL <key>
+FLUSHDB
+```
+
+Use `KEYS` only in local development.
 
 ### Test
 
@@ -296,9 +353,40 @@ On macOS/Linux:
 ./mvnw test
 ```
 
-## Docker Compose Note
+## Docker Compose Notes
 
-`compose.yaml` defines a PostgreSQL container, but its default database, username, and password do not currently match `application.properties`. If you use Docker Compose for local development, update either the compose file or the Spring datasource settings so they point to the same database credentials.
+`docker-compose.yml` defines PostgreSQL, Redis, and the backend application container.
+
+When running the backend from IntelliJ IDEA, do not also start the `backend` Compose service on host port `8080`, or the embedded Spring Boot web server will fail with:
+
+```text
+Web server failed to start. Port 8080 was already in use.
+```
+
+This can happen automatically because the project includes `spring-boot-docker-compose`. During local Spring Boot startup, Boot can detect `docker-compose.yml` and start services from it. Since the current Compose file includes:
+
+```yaml
+backend:
+  ports:
+    - "8080:8080"
+```
+
+the backend container can occupy the same port that the IntelliJ-run application needs.
+
+Recommended local approach:
+
+```bash
+docker compose up postgres redis
+```
+
+Then run the backend from IntelliJ or Maven with the `local` profile.
+
+Alternative fixes:
+
+* Disable Spring Boot Docker Compose integration for local runs with `spring.docker.compose.enabled=false`.
+* Move the `backend` service into a Docker Compose profile and only start it intentionally.
+* Create a dependency-only Compose file for PostgreSQL and Redis, then point `spring.docker.compose.file` to that file.
+* Run the IntelliJ application on another port with `server.port=8081`.
 
 ## Documentation
 
