@@ -1,0 +1,125 @@
+{
+    "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:150619449855:task-definition/constructiq-backend-release:2",
+    "containerDefinitions": [
+        {
+            "name": "constructiq-backend",
+            "image": "150619449855.dkr.ecr.ap-southeast-1.amazonaws.com/constructiq-backend:latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp",
+                    "name": "constructiq-backend-8080-tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "APP_CORS_ALLOWED_ORIGINS",
+                    "value": "http://constructiq-alb-722189741.ap-southeast-1.elb.amazonaws.com,https://constructiq-frontend-kap8vidxw-tc129.vercel.app,https://constructiq.chenyaqi.com"
+                },
+                {
+                    "name": "JWT_SECRET",
+                    "value": "local-dev-secret-key-change-this-at-least-32-chars-2026aws"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_PASSWORD",
+                    "value": "12345678"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_URL",
+                    "value": "jdbc:postgresql://constructiq-db.clc0ogkom47b.ap-southeast-1.rds.amazonaws.com:5432/constructiq?ssl=true&sslmode=require"
+                },
+                {
+                    "name": "SPRING_JPA_HIBERNATE_DDL_AUTO",
+                    "value": "update"
+                },
+                {
+                    "name": "SPRING_PROFILES_ACTIVE",
+                    "value": "prod"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_USERNAME",
+                    "value": "postgres"
+                }
+            ],
+            "environmentFiles": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "ulimits": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/constructiq-backend",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            },
+            "systemControls": []
+        }
+    ],
+    "family": "constructiq-backend-release",
+    "executionRoleArn": "arn:aws:iam::150619449855:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "revision": 2,
+    "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "MANAGED_INSTANCES",
+        "FARGATE"
+    ],
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "512",
+    "memory": "1024",
+    "registeredAt": "2026-06-21T11:06:03.888Z",
+    "registeredBy": "arn:aws:iam::150619449855:root",
+    "enableFaultInjection": false,
+    "tags": [
+        {
+            "key": "Project",
+            "value": "constructiq-project"
+        },
+        {
+            "key": "awsApplication",
+            "value": "arn:aws:resource-groups:ap-southeast-1:150619449855:group/ConstructIQ/0620yokwfyjpzt6iy157spjy1r"
+        }
+    ]
+}
