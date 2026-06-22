@@ -406,7 +406,6 @@ Planned or likely future work:
 * AI progress report summarization
 * Cloud object storage integration
 * Notification workflows
-* CI/CD and deployment hardening
 
 ## Author
 
