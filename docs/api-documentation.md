@@ -76,6 +76,8 @@ New users registered through `POST /api/auth/register` are created with role `US
 | Upload/delete a document | Project creator or project member with role `MANAGER`. |
 | View dashboard statistics | Authenticated user. Includes only projects the user can access. |
 | Create/read dashboard statistics snapshots | Authenticated user. Snapshots are scoped to the current user. |
+| Use AI chatbot | Authenticated user. Context is limited to projects the user can access, or the requested project if `projectId` is provided. |
+| Generate AI advice | Authenticated user. Advice context is limited to projects the user can access, or the requested project if `projectId` is provided. |
 
 ## Common Response Types
 
@@ -1610,6 +1612,171 @@ Failure cases:
 | Status | Reason |
 | --- | --- |
 | `404` | The user has no saved dashboard statistics snapshot. |
+
+## AI API
+
+AI endpoints use a configurable provider API. Defaults are configured through environment variables:
+
+```properties
+AI_PROVIDER=local
+AI_BASE_URL=http://localhost:11434
+AI_API_KEY=
+AI_CHAT_MODEL=llama3.1
+AI_EMBED_MODEL=all-MiniLM-L6-v2
+AI_CHAT_FORMAT=local
+AI_EMBED_FORMAT=local
+AI_CHAT_ENDPOINT=/api/chat
+AI_EMBED_ENDPOINT=/api/embeddings
+AI_EMBED_FALLBACK_ENDPOINT=/api/embed
+AI_EMBEDDINGS_ENABLED=true
+AI_TEMPERATURE=0.2
+```
+
+The backend first builds context from accessible projects, tasks, risks, progress reports, and document metadata. It uses the embedding model to rank relevant context snippets when available, then sends the selected context to the chat model.
+
+For OpenAI-compatible providers, use `AI_CHAT_FORMAT=openai` and the provider's chat-completions path. Example DeepSeek chat configuration:
+
+```properties
+AI_PROVIDER=deepseek
+AI_BASE_URL=https://api.deepseek.com
+AI_API_KEY=<your-api-key>
+AI_CHAT_MODEL=deepseek-chat
+AI_CHAT_FORMAT=openai
+AI_CHAT_ENDPOINT=/chat/completions
+AI_EMBEDDINGS_ENABLED=false
+```
+
+### AI Context Snippet Object
+
+```json
+{
+  "sourceType": "RISK",
+  "sourceId": 900,
+  "projectId": 10,
+  "projectName": "Harbour Tower",
+  "title": "Risk: Steel delivery delay",
+  "score": 0.932,
+  "excerpt": "Risk data. Title: Steel delivery delay. ..."
+}
+```
+
+### Chat
+
+Answers a user question using accessible project context. Pass `projectId` to scope the answer to one project. `history` is optional client-supplied chat history and supports only `user` and `assistant` roles.
+
+```http
+POST /api/ai/chat
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Request body:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `message` | string | Yes | User question, max 4000 characters. |
+| `projectId` | number | No | If provided, user must have access to this project. |
+| `history` | array | No | Up to 10 prior messages. |
+
+Example request:
+
+```json
+{
+  "message": "What should we do about steel delivery?",
+  "projectId": 10,
+  "history": [
+    {
+      "role": "user",
+      "content": "Focus on schedule risks."
+    },
+    {
+      "role": "assistant",
+      "content": "The main schedule risk is steel delivery."
+    }
+  ]
+}
+```
+
+Example response:
+
+```json
+{
+  "answer": "Prioritize supplier confirmation, prepare an alternate procurement path, and resequence non-critical tasks while the delivery date is confirmed.",
+  "projectId": 10,
+  "chatModel": "llama3.1",
+  "embedModel": "all-MiniLM-L6-v2",
+  "generatedAt": "2026-06-29T10:30:00",
+  "context": [
+    {
+      "sourceType": "RISK",
+      "sourceId": 900,
+      "projectId": 10,
+      "projectName": "Harbour Tower",
+      "title": "Risk: Steel delivery delay",
+      "score": 0.932,
+      "excerpt": "Risk data. Title: Steel delivery delay. ..."
+    }
+  ]
+}
+```
+
+### Advice
+
+Generates concise project-management advice for accessible project data. Pass `projectId` to scope advice to one project, and `focus` to steer the output.
+
+```http
+POST /api/ai/advice
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Request body:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `projectId` | number | No | If provided, user must have access to this project. |
+| `focus` | string | No | Advice focus, max 1000 characters. |
+
+Example request:
+
+```json
+{
+  "projectId": 10,
+  "focus": "schedule risk and next actions"
+}
+```
+
+Example response:
+
+```json
+{
+  "advice": "Treat the steel delivery delay as the priority schedule risk. Confirm supplier dates, identify alternate suppliers, and update dependent task sequencing.",
+  "projectId": 10,
+  "chatModel": "llama3.1",
+  "embedModel": "all-MiniLM-L6-v2",
+  "generatedAt": "2026-06-29T10:30:00",
+  "context": [
+    {
+      "sourceType": "RISK",
+      "sourceId": 900,
+      "projectId": 10,
+      "projectName": "Harbour Tower",
+      "title": "Risk: Steel delivery delay",
+      "score": 0.932,
+      "excerpt": "Risk data. Title: Steel delivery delay. ..."
+    }
+  ]
+}
+```
+
+Failure cases:
+
+| Status | Reason |
+| --- | --- |
+| `400` | Invalid message, history role, or focus length. |
+| `403` | Authenticated user cannot access the requested `projectId`. |
+| `404` | Requested project does not exist. |
+| `503` | The configured AI provider or chat model is unavailable. |
 
 ## Quick Workflow Example
 

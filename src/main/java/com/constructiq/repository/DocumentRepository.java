@@ -10,5 +10,7 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     List<Document> findByProjectOrderByCreatedAtDesc(Project project);
 
+    List<Document> findByProjectInOrderByCreatedAtDesc(List<Project> projects);
+
     long countByProjectIn(List<Project> projects);
 }

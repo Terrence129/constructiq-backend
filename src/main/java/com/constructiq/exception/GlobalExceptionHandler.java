@@ -19,6 +19,17 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(AiProviderException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponse handleAiProvider(AiProviderException ex) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(503)
+                .error("Service Unavailable")
+                .message(ex.getMessage())
+                .build();
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleIllegalArgument(IllegalArgumentException ex) {

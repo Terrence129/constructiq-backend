@@ -29,6 +29,18 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: local-dev-secret-key-change-this-at-least-32-chars
+      AI_PROVIDER: "${AI_PROVIDER:-local}"
+      AI_BASE_URL: "${AI_BASE_URL:-http://localhost:11434}"
+      AI_API_KEY: "${AI_API_KEY:-}"
+      AI_CHAT_MODEL: "${AI_CHAT_MODEL:-llama3.1}"
+      AI_EMBED_MODEL: "${AI_EMBED_MODEL:-all-MiniLM-L6-v2}"
+      AI_CHAT_FORMAT: "${AI_CHAT_FORMAT:-local}"
+      AI_EMBED_FORMAT: "${AI_EMBED_FORMAT:-local}"
+      AI_CHAT_ENDPOINT: "${AI_CHAT_ENDPOINT:-/api/chat}"
+      AI_EMBED_ENDPOINT: "${AI_EMBED_ENDPOINT:-/api/embeddings}"
+      AI_EMBED_FALLBACK_ENDPOINT: "${AI_EMBED_FALLBACK_ENDPOINT:-/api/embed}"
+      AI_EMBEDDINGS_ENABLED: "${AI_EMBEDDINGS_ENABLED:-true}"
+      AI_TEMPERATURE: "${AI_TEMPERATURE:-0.2}"
       APP_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:4173,http://constructiq-alb-722189741.ap-southeast-1.elb.amazonaws.com,https://constructiq-frontend-kap8vidxw-tc129.vercel.app,https://constructiq.chenyaqi.com
     ports:
       - "8080:8080"

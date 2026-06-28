@@ -46,6 +46,12 @@ ConstructIQ Backend is a Spring Boot API for a construction project management p
 * Dashboard statistics snapshots
 * Latest snapshot retrieval
 
+### AI Assistant
+
+* Authenticated AI chatbot grounded in accessible project data
+* AI project advice endpoint for risks, schedule, cost, quality, and next actions
+* Configurable AI provider for local or OpenAI-compatible chat and embedding APIs
+
 ### Redis Cache
 
 * Redis-backed Spring Cache integration
@@ -65,6 +71,7 @@ ConstructIQ Backend is a Spring Boot API for a construction project management p
 * PostgreSQL
 * Redis
 * Spring Cache
+* Configurable AI provider API
 * Maven
 * Lombok
 * JJWT 0.12.6
@@ -224,6 +231,13 @@ POST /api/dashboard/statistics/snapshots
 GET  /api/dashboard/statistics/snapshots/latest
 ```
 
+### AI
+
+```http
+POST /api/ai/chat
+POST /api/ai/advice
+```
+
 ### Development Test Endpoint
 
 ```http
@@ -279,9 +293,49 @@ jwt.expiration=86400000
 app.upload-dir=uploads
 spring.cache.type=redis
 spring.data.redis.repositories.enabled=false
+
+ai.provider.name=${AI_PROVIDER:local}
+ai.provider.base-url=${AI_BASE_URL:http://localhost:11434}
+ai.provider.api-key=${AI_API_KEY:}
+ai.provider.chat-model=${AI_CHAT_MODEL:llama3.1}
+ai.provider.embed-model=${AI_EMBED_MODEL:all-MiniLM-L6-v2}
+ai.provider.chat-format=${AI_CHAT_FORMAT:local}
+ai.provider.embed-format=${AI_EMBED_FORMAT:local}
+ai.provider.chat-endpoint=${AI_CHAT_ENDPOINT:/api/chat}
+ai.provider.embed-endpoint=${AI_EMBED_ENDPOINT:/api/embeddings}
+ai.provider.embed-fallback-endpoint=${AI_EMBED_FALLBACK_ENDPOINT:/api/embed}
+ai.provider.embeddings-enabled=${AI_EMBEDDINGS_ENABLED:true}
+ai.provider.temperature=${AI_TEMPERATURE:0.2}
 ```
 
 Use a strong JWT secret for non-local environments.
+
+AI endpoints call the configured provider API. The default values target a local provider using the existing local model defaults:
+
+```bash
+AI_PROVIDER=local
+AI_BASE_URL=http://localhost:11434
+AI_CHAT_MODEL=llama3.1
+AI_EMBED_MODEL=all-MiniLM-L6-v2
+AI_CHAT_FORMAT=local
+AI_EMBED_FORMAT=local
+AI_CHAT_ENDPOINT=/api/chat
+AI_EMBED_ENDPOINT=/api/embeddings
+AI_EMBED_FALLBACK_ENDPOINT=/api/embed
+AI_EMBEDDINGS_ENABLED=true
+```
+
+For an OpenAI-compatible provider such as DeepSeek chat, configure the provider without code changes. If the provider does not expose embeddings, disable embeddings and the backend will use keyword context ranking:
+
+```bash
+AI_PROVIDER=deepseek
+AI_BASE_URL=https://api.deepseek.com
+AI_API_KEY=<your-api-key>
+AI_CHAT_MODEL=deepseek-chat
+AI_CHAT_FORMAT=openai
+AI_CHAT_ENDPOINT=/chat/completions
+AI_EMBEDDINGS_ENABLED=false
+```
 
 ### Run
 
@@ -402,8 +456,6 @@ Additional project notes and SQL scripts are in `docs/`, including:
 
 Planned or likely future work:
 
-* AI risk analysis
-* AI progress report summarization
 * Cloud object storage integration
 * Notification workflows
 
