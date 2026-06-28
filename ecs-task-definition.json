@@ -43,6 +43,54 @@
                 {
                     "name": "SPRING_DATASOURCE_USERNAME",
                     "value": "postgres"
+                },
+                {
+                    "name": "AI_PROVIDER",
+                    "value": "local"
+                },
+                {
+                    "name": "AI_BASE_URL",
+                    "value": "http://localhost:11434"
+                },
+                {
+                    "name": "AI_API_KEY",
+                    "value": ""
+                },
+                {
+                    "name": "AI_CHAT_MODEL",
+                    "value": "llama3.1"
+                },
+                {
+                    "name": "AI_EMBED_MODEL",
+                    "value": "all-MiniLM-L6-v2"
+                },
+                {
+                    "name": "AI_CHAT_FORMAT",
+                    "value": "local"
+                },
+                {
+                    "name": "AI_EMBED_FORMAT",
+                    "value": "local"
+                },
+                {
+                    "name": "AI_CHAT_ENDPOINT",
+                    "value": "/api/chat"
+                },
+                {
+                    "name": "AI_EMBED_ENDPOINT",
+                    "value": "/api/embeddings"
+                },
+                {
+                    "name": "AI_EMBED_FALLBACK_ENDPOINT",
+                    "value": "/api/embed"
+                },
+                {
+                    "name": "AI_EMBEDDINGS_ENABLED",
+                    "value": "true"
+                },
+                {
+                    "name": "AI_TEMPERATURE",
+                    "value": "0.2"
                 }
             ],
             "environmentFiles": [],
